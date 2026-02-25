@@ -14,19 +14,19 @@ close all;
 % Вычисляемые параметры
 
 % Считывание сигнала из файла
-    inFile.Name = '../Signals/28_01_2019__17_02_51_x02_1ch_16b_15pos_200000ms.dat';
-    inFile.HeadLenInBytes = 0;
-    inFile.NumOfChannels  = 1;
-    inFile.ChanNum  = 0;
-    inFile.DataType = 'int16';
-    inFile.Fs0      = Fbase * 2;
-    inFile.dF       = 0;
-    inFile.FsDown   = 1;
-    inFile.FsUp     = 3;
+    File.Name = '../Signals/28_01_2019__17_02_51_x02_1ch_16b_15pos_200000ms.dat';
+    File.HeadLenInBytes = 0;
+    File.NumOfChannels  = 1;
+    File.ChanNum  = 0;
+    File.DataType = 'int16';
+    File.Fs0      = Fbase * 2;
+    File.dF       = 0;
+    File.FsDown   = 1;
+    File.FsUp     = 3;
     NumOfShiftedSamples = 0;
     NumOfNeededSamples  = (NumCACodePers+1) * CACodeLen * sps - 1;
 
-    [Signal, File] = ReadSignalFromFile(inFile, NumOfShiftedSamples, ...
+    [Signal, File] = ReadSignalFromFile(File, NumOfShiftedSamples, ...
         NumOfNeededSamples);
 
 % Обнаружение спутника
