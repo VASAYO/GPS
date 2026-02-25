@@ -36,25 +36,25 @@ close all;
         FVals = 0 : 400 : 5200;
         FVals = [-fliplr(FVals(2:end) ), FVals];
 
-        % Эталонный C/A код
-            ethCACode = 1 - 2 * GenCACode(CACodeNum, 1);
-    
-        % Построение тела неопределённости
-            CorrVals = zeros(length(FVals), CACodeLen * sps);
-    
-            for k = 1 : length(FVals)
-                % Опорная последовательность
-                    refSeq = repelem(ethCACode, sps);
-                    refSeq = refSeq .* ...
-                        exp(1j*2*pi*FVals(k) * (0:length(refSeq)-1) / File.Fs);
-    
-                % Корреляция
-                    buf  = conv(Signal, fliplr(conj(refSeq) ), "valid");
-    
-                % Некогерентное накопление результата
-                    buf1 = reshape(buf, CACodeLen * sps, [] ).';
-                    CorrVals(k, :) = sum(abs(buf1) );
-            end
-    
-            figure(CACodeNum)
-            surf(CorrVals)
+    % Эталонный C/A код
+        ethCACode = 1 - 2 * GenCACode(CACodeNum, 1);
+
+    % Построение тела неопределённости
+        CorrVals = zeros(length(FVals), CACodeLen * sps);
+
+        for k = 1 : length(FVals)
+            % Опорная последовательность
+                refSeq = repelem(ethCACode, sps);
+                refSeq = refSeq .* ...
+                    exp(1j*2*pi*FVals(k) * (0:length(refSeq)-1) / File.Fs);
+
+            % Корреляция
+                buf  = conv(Signal, fliplr(conj(refSeq) ), "valid");
+
+            % Некогерентное накопление результата
+                buf1 = reshape(buf, CACodeLen * sps, [] ).';
+                CorrVals(k, :) = sum(abs(buf1) );
+        end
+
+        figure(CACodeNum)
+        surf(CorrVals)
