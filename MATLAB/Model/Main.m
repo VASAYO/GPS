@@ -29,16 +29,15 @@ close all;
     [Signal, File] = ReadSignalFromFile(inFile, NumOfShiftedSamples, ...
         NumOfNeededSamples);
 
-% Обнаружение спутников
-    CACodeNum = 31;
+% Обнаружение спутника
+    CACodeNum = 1;
 
     % Массив значений сдвигов частоты
-        FVals = 0 : 720 : 720 * 7;
+        FVals = 0 : 400 : 5200;
         FVals = [-fliplr(FVals(2:end) ), FVals];
 
-    for i = 1:63
         % Эталонный C/A код
-            ethCACode = 1 - 2 * GenCACode(i, 1);
+            ethCACode = 1 - 2 * GenCACode(CACodeNum, 1);
     
         % Построение тела неопределённости
             CorrVals = zeros(length(FVals), CACodeLen * sps);
@@ -57,6 +56,5 @@ close all;
                     CorrVals(k, :) = sum(abs(buf1) );
             end
     
-            figure(i)
-        surf(CorrVals)
-    end
+            figure(CACodeNum)
+            surf(CorrVals)
