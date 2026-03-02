@@ -19,9 +19,9 @@ function Params = Setup()
 
     % Выбор имени файла-записи
         % Директория с файлами-записями
-            Main.SigDirName = '';
+            Main.SigDirName = '../../Signals';
         % Имя файла-записи
-            Main.SigFileName = '28_01_2019__17_02_51_x02_1ch_16b_15pos_200000ms.dat';
+            Main.SigFileName = '30_08_2018__19_38_33_x02_1ch_16b_15pos_90000ms.dat';
 
     % Имя файла для загрузки результатов
     % Если StartProcNum = 1, то не надо ничего загружать
