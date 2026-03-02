@@ -14,7 +14,7 @@ function Res = P10_NonCohSearchSats(inRes, Params)
 
 %% ИНИЦИАЛИЗАЦИЯ РЕЗУЛЬТАТА
     Search = struct( ...
-        'NumSats',       [], ... % Скаляр, количество найденных спутников
+        'NumSats',        0, ... % Скаляр, количество найденных спутников
         'SatNums',       [], ... % массив 1хNumSats с номерами найденных
             ... % спутников
         'SamplesShifts', [], ... % массив 1хNumSats, каждый элемент -
@@ -27,7 +27,7 @@ function Res = P10_NonCohSearchSats(inRes, Params)
             ... % пиков корреляционных функций нормированных на среднее
             ... % значение, по которым были найдены спутники
         'AllCorVals',    zeros(1, 32) ... % массив максимальных значений
-            ... % всех корреляцион ных функций
+            ... % всех корреляционных функций
     );
 
 %% УСТАНОВКА ПАРАМЕТРОВ
@@ -52,7 +52,76 @@ function Res = P10_NonCohSearchSats(inRes, Params)
     % Длина CA-кода с учётом частоты дискретизации
         CALen = 1023 * Res.File.R;
 
+    % Число первых отсчётов записи, используемых для обнаружения
+        NumFirstSigSamples = (NumCA2Search+1) * CALen - 1;
+
 %% ОСНОВНАЯ ЧАСТЬ ФУНКЦИИ
+    % Считываем сигнал из файла
+        Signal = ReadSignalFromFile(Res.File, 0, NumFirstSigSamples).';
 
+    % Цикл по C/A кодам
+        for caIdx = 1 : 32
+            % Генерация набора опорных последовательностей для обнаружения
+                CACode1023 = 1 - 2*GenCACode(caIdx, 1).';
+                CACodeR    = repelem(CACode1023, Res.File.R);
 
+                refSeqs    = repmat(CACodeR, 1, NumCFreqs);
+
+                expF = repmat(CentralFreqs, CALen, 1);
+                expT = (0 : CALen-1)' / Res.File.Fs;
+                expT = repmat(expT, 1, NumCFreqs);
+
+                refSeqs = refSeqs .* ...
+                    exp(1j*2*pi*expF .* expT);
+
+            % Построение тела неопределённости
+                CorrBody = zeros(CALen, NumCFreqs);
+
+                for fIdx = 1 : NumCFreqs
+                    % Корреляция сигнала с опорной последовательностью
+                        buf = conv(Signal, flipud(refSeqs(:, fIdx) ), ...
+                            "valid");
+
+                    % Некогерентное накопление
+                        buf = reshape(buf, CALen, []);
+                        CorrBody(:, fIdx) = sum(abs(buf), 2);
+                end
+
+            % Вынесение решения о наличии или отсутствии спутника
+                % Решающая метрика
+                    Peak2Aver = max(abs(CorrBody), [], "all") / ...
+                        mean(abs(CorrBody), "all");
+
+                % Сравнение значения метрики с пороговым
+                    isSatFound = (Peak2Aver >= SearchThreshold);
+
+            % Обновляем структуру Search
+                if isSatFound
+                    Search.NumSats = Search.NumSats + 1;
+                    Search.SatNums(end+1) = caIdx;
+
+                    % Определение временного и частотного сдвигов
+                        [buf, indsMaxDimT] = max(abs(CorrBody) );
+                        [~,   indMaxDimF ] = max(buf);
+                        indMaxDimT = indsMaxDimT(indMaxDimF);
+
+                        Search.SamplesShifts(end+1) = indMaxDimT - 1;
+                        Search.FreqShifts   (end+1) = ...
+                            CentralFreqs(indMaxDimF);
+
+                        Search.CorVals(end+1) = Peak2Aver;
+                end
+
+                Search.AllCorVals(caIdx) = max(abs(CorrBody), [], "all");
+        end
+
+        % Ранжирование найденных спутников по убыванию их мощности в записи
+            [Search.CorVals, indsSatsSorted] = sort(Search.CorVals, "descend");
+
+            Search.SatNums       = Search.SatNums(indsSatsSorted);
+            Search.SamplesShifts = Search.SamplesShifts(indsSatsSorted);
+            Search.FreqShifts    = Search.FreqShifts(indsSatsSorted);
+
+        % Перезаписываем поле переменной Res
+            Res.Search = Search;
 end

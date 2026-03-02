@@ -5,7 +5,7 @@ function Params = Setup()
         Main.StartProcNum = 1; %  1 <= StartProcNum <= length(FuncNames)
 
     % Номер процедуры, на которой надо закончить выполнение Main
-        Main.StopProcNum = 2; %  1 <= StopProcNum <= length(FuncNames) и
+        Main.StopProcNum = 1; %  1 <= StopProcNum <= length(FuncNames) и
             % StartProcNum <= StopProcNum
 
 	% Выбор типа обработки - устанавливается для StartProcNum = 1, чтобы
@@ -19,9 +19,9 @@ function Params = Setup()
 
     % Выбор имени файла-записи
         % Директория с файлами-записями
-            Main.SigDirName = '';
+            Main.SigDirName = '../../Signals';
         % Имя файла-записи
-            Main.SigFileName = '28_01_2019__17_02_51_x02_1ch_16b_15pos_200000ms.dat';
+            Main.SigFileName = '30_08_2018__19_38_33_x02_1ch_16b_15pos_90000ms.dat';
 
     % Имя файла для загрузки результатов
     % Если StartProcNum = 1, то не надо ничего загружать
@@ -38,7 +38,7 @@ function Params = Setup()
         Main.NumOfChannels  = 1;
         Main.ChanNum        = 0;
         Main.DataType       = 'int16';
-        Main.Fs0            = 2.046*10^6;
+        Main.Fs0            = 1.023*10^6 * 2;
         Main.dF             = 0;
         Main.FsDown         = 1;
         Main.FsUp           = 1;
@@ -47,7 +47,7 @@ function Params = Setup()
     % Количество периодов, учитываемых при обнаружении.
         P10_NonCohSearchSats.NumCA2Search = 20;
     % Массив центральных частот анализируемых диапазонов, Гц
-        P10_NonCohSearchSats.CentralFreqs = -6000 : 1000 : 6000;
+        P10_NonCohSearchSats.CentralFreqs = -5200 : 400 : 5200;
     % Порог обнаружения
         P10_NonCohSearchSats.SearchThreshold = 3.0;
 
