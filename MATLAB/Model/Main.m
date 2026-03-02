@@ -1,136 +1,245 @@
-clc; clear;
+clc;
+clear;
 close all;
 
-% РџР°СЂР°РјРµС‚СЂС‹
-    % РћРїРѕСЂРЅР°СЏ С‡Р°СЃС‚РѕС‚Р° РґРёСЃРєСЂРµС‚РёР·Р°С†РёРё
-        Fbase = 1.023e6;
-    % РљРѕСЌС„С„РёС†РёРµРЅС‚ РїРµСЂРµРґРёСЃРєСЂРµС‚РёР·Р°С†РёРё
-        sps = 2;
-    % Р”Р»РёРЅР° C/A РєРѕРґР° РІ С‡РёРїР°С…
-        CACodeLen = 1023;
-    % Р§РёСЃР»Рѕ РїРµСЂРёРѕРґРѕРІ C/A РєРѕРґР°, РёСЃРї-РјС‹С… РїСЂРё РѕР±РЅР°СЂСѓР¶РµРЅРёРё
-        NumCACodePers = 20;
-
-    % Р§РёСЃР»Рѕ РїРµСЂРёРѕРґРѕРІ C/A РєРѕРґРѕРІ, РїРѕСЃР»Рµ РєРѕС‚РѕСЂС‹С… РЅРµРѕР±С…РѕРґРёРјРѕ РїРѕРґСЃС‚СЂР°РёРІР°С‚СЊ
-    % СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёСЋ РїРѕ РІСЂРµРјРµРЅРё
-        NumCA2Sync = 100;
-
-    % РџСЂРѕСЂРёСЃРѕРІРєР° СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ
-        isDrawRes = false;
-
-% Р’С‹С‡РёСЃР»СЏРµРјС‹Рµ РїР°СЂР°РјРµС‚СЂС‹
-
-% РЎС‡РёС‚С‹РІР°РЅРёРµ СЃРёРіРЅР°Р»Р° РёР· С„Р°Р№Р»Р°
-    File.Name = '../Signals/28_01_2019__17_02_51_x02_1ch_16b_15pos_200000ms.dat';
-    File.HeadLenInBytes = 0;
-    File.NumOfChannels  = 1;
-    File.ChanNum  = 0;
-    File.DataType = 'int16';
-    File.Fs0      = Fbase * 2;
-    File.dF       = 0;
-    File.FsDown   = 1;
-    File.FsUp     = 1;
-    NumOfShiftedSamples = 0;
-    NumOfNeededSamples  = 4 * File.Fs0 * File.FsUp;
-
-    [Signal, File] = ReadSignalFromFile(File, NumOfShiftedSamples, ...
-        NumOfNeededSamples);
-
-% РћР±РЅР°СЂСѓР¶РµРЅРёРµ СЃРїСѓС‚РЅРёРєР°
-    CACodeNum = 1;
-
-    % РћС‚СЂРµР·РѕРє СЃРёРіРЅР°Р»Р° РІ РЅР°С‡Р°Р»Рµ Р·Р°РїРёСЃРё
-        SignalShort = Signal(1:(NumCACodePers+1) * CACodeLen * sps - 1);
-
-    % РњР°СЃСЃРёРІ Р·РЅР°С‡РµРЅРёР№ СЃРґРІРёРіРѕРІ С‡Р°СЃС‚РѕС‚С‹
-        FVals = 0 : 400 : 5200;
-        FVals = [-fliplr(FVals(2:end) ), FVals];
-
-    % Р­С‚Р°Р»РѕРЅРЅС‹Р№ C/A РєРѕРґ
-        ethCACode = 1 - 2 * GenCACode(CACodeNum, 1);
-
-    % РџРѕСЃС‚СЂРѕРµРЅРёРµ С‚РµР»Р° РЅРµРѕРїСЂРµРґРµР»С‘РЅРЅРѕСЃС‚Рё
-        CorrVals = zeros(length(FVals), CACodeLen * sps);
-
-        for k = 1 : length(FVals)
-            % РћРїРѕСЂРЅР°СЏ РїРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕСЃС‚СЊ
-                refSeq = repelem(ethCACode, sps);
-                refSeq = refSeq .* ...
-                    exp(1j*2*pi*FVals(k) * (0:length(refSeq)-1) / File.Fs);
-
-            % РљРѕСЂСЂРµР»СЏС†РёСЏ
-                buf  = conv(SignalShort, fliplr(conj(refSeq) ), "valid");
-
-            % РќРµРєРѕРіРµСЂРµРЅС‚РЅРѕРµ РЅР°РєРѕРїР»РµРЅРёРµ СЂРµР·СѓР»СЊС‚Р°С‚Р°
-                buf1 = reshape(buf, CACodeLen * sps, [] ).';
-                CorrVals(k, :) = sum(abs(buf1) );
-        end
-
-        if isDrawRes
-            figure(CACodeNum)
-            surf(CorrVals)
-        end
-
-    % РћРїСЂРµРґРµР»РµРЅРёРµ РіСЂСѓР±РѕРіРѕ СЃРґРІРёРіР° С‡Р°СЃС‚РѕС‚С‹ Рё СЃРґРІРёРіР° РґРѕ РЅР°С‡Р°Р»Р° РїРµСЂРІРѕРіРѕ C/A
-    % РєРѕРґР°
-        [buf, IndsMaxY] = max(CorrVals);
-        [~, IndMaxX]    = max(buf);
-        IndMaxY = IndsMaxY(IndMaxX);
-
-        df = FVals(IndMaxY);
-        Offset = IndMaxX - 1;
-
-% Р“СЂСѓР±Р°СЏ РїРѕРґСЃС‚СЂРѕР№РєР° С‡Р°СЃС‚РѕС‚С‹
-    Signal = Signal .* exp(-1j*2*pi * df * (0:length(Signal)-1)/File.Fs);
-
-% Р’С‹С‡РёСЃР»РµРЅРёРµ РєРѕСЂСЂРµР»СЏС†РёР№ C/A РєРѕРґРѕРІ СЃ РѕРїРѕСЂРЅРѕР№ РїРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕСЃС‚СЊСЋ
-    % Р§РёСЃР»Рѕ РїРѕР»РЅС‹С… C/A РєРѕРґРѕРІ РІ Р·Р°РїРёСЃРё
-        NumFullCACodes = floor( (length(Signal) - Offset) / length(refSeq) );
-
-    % РЈРєР°Р·Р°С‚РµР»СЊ, РЅР° РЅР°С‡Р°Р»Рѕ РѕС‡РµСЂРµРґРЅРѕРіРѕ РїРµСЂРёРѕРґР° C/A РєРѕРґР°
-        Ptr = Offset +1;
-
-    % Р—РЅР°С‡РµРЅРёСЏ РєРѕСЂСЂРµР»СЏС†РёР№
-        CorrValsDemod = zeros(NumFullCACodes, 1);
-
-    % РћРїРѕСЂРЅР°СЏ РїРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕСЃС‚СЊ
-        refSeq = repelem(ethCACode, sps).';
-
-    % РЎС‡С‘С‚С‡РёРє РїРµСЂРёРѕРґРѕРІ C/A РєРѕРґРѕРІ, РѕР±СЂР°Р±РѕС‚Р°РЅРЅС‹С… РїРѕСЃР»Рµ РїРѕСЃР»РµРґРЅРµР№ РїРѕРґСЃС‚СЂРѕР№РєРё
-    % СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёРё РїРѕ РІСЂРµРјРµРЅРё
-        CntrCA = 0;
-
-    for k = 1 : NumFullCACodes
-        % РћР±РЅСѓР»РµРЅРёРµ РїРµСЂРµРјРµРЅРЅРѕР№, РѕС‚РІРµС‡Р°СЋС‰РµР№ Р·Р° РїРѕРґСЃС‚СЂРѕР№РєСѓ СЃРёРјРІРѕР»СЊРЅРѕР№
-        % СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёРё
-            Ofst = 0;
-
-        % Р’С‹С‡РёСЃР»РµРЅРёРµ РєРѕСЂСЂРµР»СЏС†РёРё. РџСЂРё РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё РІС‹РїРѕР»РЅРµРЅРёРµ
-        % Early-Late-Prompt РєРѕСЂСЂРµР»СЏС†РёР№ Рё РїРѕРґСЃС‚СЂРѕР№РєР° СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёРё РїРѕ
-        % РІСЂРµРјРµРЅРё
-            if CntrCA == NumCA2Sync
-                % РћР±РЅСѓР»РµРЅРёРµ СЃС‡С‘С‚С‡РёРєР°
-                    CntrCA = 0;
-
-                % Early-Prompt-Late РєРѕСЂСЂРµР»СЏС†РёРё
-                    CorrValsEPL = zeros(1, 3);
-
-                    CorrValsEPL(1) = Signal( (0:length(refSeq)-1) + Ptr - 1) * refSeq;
-                    CorrValsEPL(2) = Signal( (0:length(refSeq)-1) + Ptr) * refSeq;
-                    CorrValsEPL(3) = Signal( (0:length(refSeq)-1) + Ptr + 1) * refSeq;
-
-                % Р’С‹Р±РѕСЂ РЅР°РёР±РѕР»СЊС€РµРіРѕ Р·РЅР°С‡РµРЅРёСЏ
-                    [CorrValsDemod(k), Ofst] = max(abs(CorrValsEPL) );
-
-                Ofst = Ofst - 2;
-
-            else
-                CorrValsDemod(k) = Signal( (0:length(refSeq)-1) + Ptr) * refSeq;
+%% ЗАГРУЗКА ПАРАМЕТРОВ
+    % Ищем в директории файлы, имя которых начинается на Setup и которые
+    % имеют расширение m. Если такой файл один, то выполняем его
+        % Определим содержимое рабочей директории
+            Listing = dir;
+        % Подготовка к циклу
+            isFind = false;
+            NumFinds = 0;
+        % Цикл по количеству элементов, содержащихся в директории
+            for k = 1:length(Listing)
+                % Рассматриваем только файлы, причём имя файла должно
+                % начинаться на Setup и иметь расширение 'm'
+                if ~Listing(k).isdir
+                if length(Listing(k).name) >= length('Setup.m')
+                if strcmp(Listing(k).name(1:length('Setup')), ...
+                        'Setup') && strcmp(Listing(k).name( ...
+                        end-1:end), '.m')
+                    SetupFileName = Listing(k).name(1:end-2);
+                    isFind = true;
+                    NumFinds = NumFinds + 1;
+                end
+                end
+                end
             end
 
-        % РРЅРєСЂРµРјРµРЅС‚ СЃС‡С‘С‚С‡РёРєР°
-            CntrCA = CntrCA + 1;
+        % Завершение работы в случае отрицательного результата поиска
+            if ~isFind
+                error('Не удалось найти файл с параметрами!');
+            end
+            if NumFinds > 1
+                error('Найдено больше одного файла с параметрами!');
+            end
 
-        % РћР±РЅРѕРІР»РµРЅРёРµ Р·РЅР°С‡РµРЅРёРµ СѓРєР°Р·Р°С‚РµР»СЏ
-            Ptr = Ptr + length(refSeq) + Ofst;
+        % Создадим указатель на нужную функцию
+            Fun = str2func(SetupFileName);
+        % Выполним функцию и перезапишем Res
+            Params = Fun();
+
+%% УСТАНОВКА ЧАСТО ИЗМЕНЯЕМЫХ ПАРАМЕТРОВ
+    % Номер процедуры, с которой надо начать выполнение Main
+        StartProcNum = Params.Main.StartProcNum;
+            % 1 <= StartProcNum <= length(FuncNames)
+
+    % Номер процедуры, на которой надо закончить выполнение Main
+        StopProcNum = Params.Main.StopProcNum;
+            % 1 <= StopProcNum <= length(FuncNames) и
+            % StartProcNum <= StopProcNum
+
+	% Выбор типа обработки - устанавливается для StartProcNum = 1, чтобы
+	%   не быть случайно изменённым в дальнейшем
+    % 'Coh'/'NonCoh' - когерентная обработка / некогерентная обработка
+        if StartProcNum == 1
+            ProcessType = Params.Main.ProcessType;
+        end
+
+    % Флаг необходимости прорисовки результатов
+        isDraw = Params.Main.isDraw; % 0 - не рисовать; 1 - рисовать;
+            % 2 - рисовать и сохранять; 3 - рисовать, сохранять и закрывать
+
+    % Выбор имени файла-записи
+        % Директория с файлами-записями
+            SigDirName = Params.Main.SigDirName;
+        % Имя файла-записи
+            SigFileName = Params.Main.SigFileName;
+        % Полное имя файла-записи
+            SigFileName = [SigDirName, '\', SigFileName];
+
+    % Имя файла для загрузки результатов
+    % Если StartProcNum = 1, то не надо ничего загружать
+        if StartProcNum > 1
+            LoadFileName = Params.Main.LoadFileName;
+        end
+
+    % Имя файла для сохранения результатов
+        SaveFileName = Params.Main.SaveFileName;
+
+    % Директория для сохранения результатов
+        SaveDirName = Params.Main.SaveDirName;
+
+    % Полные имена файлов загрузки и сохранения
+        if StartProcNum > 1
+            LoadFileName = [SaveDirName, '\', LoadFileName];
+        end
+        SaveFileName = [SaveDirName, '\', SaveFileName];
+
+%% УСТАНОВКА РЕДКО ИЗМЕНЯЕМЫХ ПАРАМЕТРОВ
+    if StartProcNum == 1
+        % Определим структуру файла-записи - описание полей см. в
+        % ReadSignalFromFile
+            File = struct( ...
+                'Name',           SigFileName, ...
+                'HeadLenInBytes', Params.Main.HeadLenInBytes, ...
+                'NumOfChannels',  Params.Main.NumOfChannels, ...
+                'ChanNum',        Params.Main.ChanNum, ...
+                'DataType',       Params.Main.DataType, ...
+                'Fs0',            Params.Main.Fs0, ...
+                'dF',             Params.Main.dF, ...
+                'FsDown',         Params.Main.FsDown, ...
+                'FsUp',           Params.Main.FsUp ...
+            );
     end
+
+%% ПОДГОТОВИТЕЛЬНАЯ ЧАСТЬ
+    % Имена функций, выполняющих обработку сигнала и/или полученных из
+    % сигнала данных
+        AllFuncNames = { ...
+            { ... % Имена функций для когерентной обработки
+                'P10_CohSearchSats', ...
+                'P20_CohTrackSatsAndBitSync', ...
+                'P30_CohDemodSatsSigs', ...
+                'P40_GetSubFrames', ...
+                'P50_ParseSubFrames', ...
+                'P60_GatherSatsEphemeris', ...
+                'P70_GetRXPoses', ...
+            }, ...
+            { ... % Имена функций для некогерентной обработки
+                'P10_NonCohSearchSats', ...
+                'P20_NonCohTrackSatsAndBitSync', ...
+                'P30_NonCohDemodSatsSigs', ...
+                'P40_GetSubFrames', ...
+                'P50_ParseSubFrames', ...
+                'P60_GatherSatsEphemeris', ...
+                'P70_GetRXPoses', ...
+            } ...
+        };
+
+    % Расчёт некоторых полей File
+        if StartProcNum == 1
+            % Определим длину файла-записи в отсчётах
+                [~, File] = ReadSignalFromFile(File, 0, 0);
+
+            % Определим коэффициент передискретизации по отношению к
+            % символьной скорости GPS
+                File.R = round(File.Fs / (1.023*10^6));
+        end
+
+    % Проверка наличия/создание директории с результатами
+        if ~isdir(SaveDirName)
+            mkdir(SaveDirName);
+        end
+
+    % Инициализируем или загрузим структуру-результат
+        if StartProcNum == 1 % Инициализация
+            Res = struct( ...
+                'ProcessType',  ProcessType, ...
+                'File',         File, ...
+                'LoadFileName', 'none', ...
+                'SaveFileName', SaveFileName, ...
+                'Search',       [], ...
+                'Track',        [], ...
+                'BitSync',      [], ...
+                'Demod',        [], ...
+                'SubFrames',    [], ...
+                'SatsData',     [], ...
+                'Ephemeris',    [], ...
+                'Positioning',  [] ...
+            );
+        else % Загрузка
+            load(LoadFileName, 'Res');
+            Res.LoadFileName = LoadFileName;
+        end
+
+    % Проверка совпадения имени файла, указанного в Main (выше) и
+    % загруженного вместе с результатами
+        if StartProcNum > 1
+            if ~isequal(Res.File.Name, SigFileName)
+                Btn = questdlg(['Указанное при запуске имя файла не ', ...
+                    'совпадает с именем, сохранённым в загруженных ', ...
+                    'результатах! Использовать новое имя можно ', ...
+                    'только, если произошло переименование файла ', ...
+                    'и/или перемещение его в другую директорию.'], ...
+                    'Внимание!', 'Использовать сохранённое имя', ...
+                    'Использовать новое имя', 'Отмена выполнения', ...
+                    'Отмена выполнения');
+                if isequal(Btn, 'Использовать сохранённое имя')
+                    % ничего не надо делать!
+                elseif isequal(Btn, 'Использовать новое имя')
+                    Res.File.Name = SigFileName;
+                elseif isequal(Btn, 'Отмена выполнения')
+                    return
+                end
+            end
+        end
+
+    % Имена функций, выполняющих обработку сигнала и/или полученных из
+    % сигнала данных
+        if isequal(Res.ProcessType, 'Coh')
+            FuncNames = AllFuncNames{1};
+        else
+            FuncNames = AllFuncNames{2};
+        end
+        
+%% ПРОВЕРКИ ЗНАЧЕНИЙ ПАРАМЕТРОВ
+    if ~((StartProcNum >= 1) && (StartProcNum <= length(FuncNames)))
+        fprintf(['Должно выполняться двойное неравенство ', ...
+            '1 <= StartProcNum <= length(FuncNames)!\nРабота Main ', ...
+            'прекращена.\n'])
+        return
+    end
+
+    if ~((StopProcNum >= 1) && (StopProcNum <= length(FuncNames)))
+        fprintf(['Должно выполняться двойное неравенство ', ...
+            '1 <= StopProcNum <= length(FuncNames)!\nРабота Main ', ...
+            'прекращена.\n'])
+        return
+    end
+
+    if ~(StartProcNum <= StopProcNum)
+        fprintf(['Должно выполняться неравенство ', ...
+            'StartProcNum <= StopProcNum!\nРабота Main прекращена.\n'])
+        return
+    end
+    
+    if ~(isequal(isDraw, 0) || isequal(isDraw, 1) || ...
+            isequal(isDraw, 2) || isequal(isDraw, 3))
+        fprintf(['Значение isDraw должно быть одним из ', ...
+            '(0, 1, 2)!\nРабота Main прекращена.\n'])
+        return
+    end
+    
+    if ~(isequal(Res.ProcessType, 'Coh') || ...
+            isequal(Res.ProcessType, 'NonCoh'))
+        fprintf(['Значение ProcessType должно быть одним из ', ...
+            '(Coh, NonCoh)!\nРабота Main прекращена.\n'])
+        return
+    end
+
+%% ОСНОВНАЯ ЧАСТЬ
+    % По очереди выполним все необходимые процедуры
+        for k = StartProcNum : StopProcNum
+            % Создадим указатель на нужную функцию
+                Fun = str2func(FuncNames{k});
+            % Выполним функцию и перезапишем Res
+                Res = Fun(Res, Params);
+            % Сохраним текущие результаты
+            % В вычислительно сложных функциях (P10_, P20_) рекомендуется
+            % делать дополнительные сохранения для отладки
+                if k < 7
+                    save(SaveFileName, 'Res', 'Params');
+                end
+        end
