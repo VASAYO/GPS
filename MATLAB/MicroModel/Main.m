@@ -22,7 +22,7 @@
 % Вычисляемые параметры
 
 % Считывание сигнала из файла
-    File.Name = '../Signals/28_01_2019__17_02_51_x02_1ch_16b_15pos_200000ms.dat';
+    File.Name = '../../Signals/28_01_2019__17_02_51_x02_1ch_16b_15pos_200000ms.dat';
     File.HeadLenInBytes = 0;
     File.NumOfChannels  = 1;
     File.ChanNum  = 0;
@@ -44,7 +44,7 @@
         SignalShort = Signal(1:(NumCACodePers+1) * CACodeLen * sps - 1);
 
     % Массив значений сдвигов частоты
-        FVals = 0 : 400 : 5200;
+        FVals = 0 : 50 : 5200;
         FVals = [-fliplr(FVals(2:end) ), FVals];
 
     % Эталонный C/A код
@@ -79,20 +79,20 @@
         IndMaxY = IndsMaxY(IndMaxX);
 
         df = FVals(IndMaxY);
-        Offset = IndMaxX - 1;
+        OffsetSamples = IndMaxX - 1;
 
 % Грубая подстройка частоты
     Signal = Signal .* exp(-1j*2*pi * df * (0:length(Signal)-1)/File.Fs);
 
 % Вычисление корреляций C/A кодов с опорной последовательностью
     % Число полных C/A кодов в записи
-        NumFullCACodes = floor( (length(Signal) - Offset) / length(refSeq) );
+        NumFullCACodes = floor( (length(Signal) - OffsetSamples) / length(refSeq) );
 
     % Указатель, на начало очередного периода C/A кода
-        Ptr = Offset +1;
+        Ptr = OffsetSamples +1;
 
     % Значения корреляций
-        CorrValsDemod = zeros(NumFullCACodes, 1);
+        PCorrs = zeros(NumFullCACodes, 1);
 
     % Опорная последовательность
         refSeq = repelem(ethCACode, sps).';
@@ -117,16 +117,16 @@
                     CorrValsEPL = zeros(1, 3);
 
                     CorrValsEPL(1) = Signal( (0:length(refSeq)-1) + Ptr - 1) * refSeq;
-                    CorrValsEPL(2) = Signal( (0:length(refSeq)-1) + Ptr) * refSeq;
+                    CorrValsEPL(2) = Signal( (0:length(refSeq)-1) + Ptr)     * refSeq;
                     CorrValsEPL(3) = Signal( (0:length(refSeq)-1) + Ptr + 1) * refSeq;
 
                 % Выбор наибольшего значения
-                    [CorrValsDemod(k), Ofst] = max(abs(CorrValsEPL) );
+                    [PCorrs(k), Ofst] = max(abs(CorrValsEPL) );
 
                 Ofst = Ofst - 2;
 
             else
-                CorrValsDemod(k) = Signal( (0:length(refSeq)-1) + Ptr) * refSeq;
+                PCorrs(k) = Signal( (0:length(refSeq)-1) + Ptr) * refSeq;
             end
 
         % Инкремент счётчика
@@ -135,3 +135,27 @@
         % Обновление значение указателя
             Ptr = Ptr + length(refSeq) + Ofst;
     end
+
+% Синхронизация с началом бита
+    % Дифференциальное созвездие P-корреляций C/A кодов
+        PCorrsDiff = PCorrs(2 : end) .* conj(PCorrs(1 : end-1) );
+    
+    % Накопление
+        PCorrsDiff = reshape(PCorrsDiff(1 : end - mod(length(PCorrsDiff), 20) ), ...
+            20, [] ...
+        );
+        Metrics = abs(sum(PCorrsDiff, 2) );
+
+    % Позиция корреляции, соответствующая началу первого бита в записи
+        [~, OffsetCACodes] = min(Metrics);
+        OffsetCACodes = OffsetCACodes - 1;
+
+% Синхронизация с началом бита
+    % Число бит в записи
+        NumBits = floor(length(PCorrs(OffsetCACodes+1 : end) ) / 20);
+
+    PCorrsSync = PCorrs(OffsetCACodes + (1:20*NumBits) );
+    PCorrsSync = reshape(PCorrsSync, 20, []);
+
+    % Когерентное накопление
+        BitCorrVals = sum(PCorrsSync, 1);
