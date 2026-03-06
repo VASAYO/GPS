@@ -40,6 +40,9 @@ function Res = P10_NonCohSearchSats(inRes, Params)
     % Порог обнаружения
         SearchThreshold = Params.P10_NonCohSearchSats.SearchThreshold;
 
+    % Флаг необходимости прорисовки результатов
+        isDraw = Params.Main.isDraw;
+
 %% СОХРАНЕНИЕ ПАРАМЕТРОВ
     Search.NumCA2Search    = NumCA2Search;
     Search.CentralFreqs    = CentralFreqs;
@@ -56,11 +59,17 @@ function Res = P10_NonCohSearchSats(inRes, Params)
         NumFirstSigSamples = (NumCA2Search+1) * CALen - 1;
 
 %% ОСНОВНАЯ ЧАСТЬ ФУНКЦИИ
+    % Лог
+        fprintf('%s Некогерентное обнаружение спутников...\n', datetime("now") );
+
     % Считываем сигнал из файла
         Signal = ReadSignalFromFile(Res.File, 0, NumFirstSigSamples).';
 
     % Цикл по C/A кодам
         for caIdx = 1 : 32
+            % Лог
+                fprintf('%s   Поиск спутника №%d: ', datetime("now"), caIdx);
+
             % Генерация набора опорных последовательностей для обнаружения
                 CACode1023 = 1 - 2*GenCACode(caIdx, 1).';
                 CACodeR    = repelem(CACode1023, Res.File.R);
@@ -95,6 +104,13 @@ function Res = P10_NonCohSearchSats(inRes, Params)
                 % Сравнение значения метрики с пороговым
                     isSatFound = (Peak2Aver >= SearchThreshold);
 
+            % Лог
+                if isSatFound
+                    fprintf('найден.\n');
+                else
+                    fprintf('не найден.\n');
+                end
+
             % Обновляем структуру Search
                 if isSatFound
                     Search.NumSats = Search.NumSats + 1;
@@ -113,6 +129,31 @@ function Res = P10_NonCohSearchSats(inRes, Params)
                 end
 
                 Search.AllCorVals(caIdx) = max(abs(CorrBody), [], "all");
+
+            % Прорисовка результатов и сохранение рисунков
+                if isDraw > 0
+                    figure(Name=['SatNum', num2str(caIdx) ] );
+                    surf(CentralFreqs,  (1:CALen)', CorrBody);
+                    title('Тело неопределённости при некогерентном ', ...
+                        ['обнаружении спутника № ', num2str(caIdx) ] ...
+                    );
+                    xlabel('Частота');
+                    ylabel('Отсчёты');
+                    zlabel('Значение КФ');
+
+                    set(gcf, 'WindowStyle', 'docked');
+                end
+                if isDraw > 1
+                    saveas(gcf, ...
+                        cat(2, ...
+                            Params.Main.SaveDirName, '/', ...
+                            'P10_NonCohSearchSats_SatNum_', num2str(caIdx) ...
+                        ) ...
+                    );
+                end
+                if isDraw > 2
+                    close(gcf);
+                end
         end
 
         % Ранжирование найденных спутников по убыванию их мощности в записи
