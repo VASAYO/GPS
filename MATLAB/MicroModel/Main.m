@@ -1,6 +1,6 @@
 % Микромодель обработки сигналов GPS
     clc; clear;
-    close all;
+    % close all;
 
 % Параметры
     % Опорная частота дискретизации
@@ -32,7 +32,7 @@
     File.FsDown   = 1;
     File.FsUp     = 1;
     NumOfShiftedSamples = 0;
-    NumOfNeededSamples  = 4 * File.Fs0 * File.FsUp;
+    NumOfNeededSamples  = 45 * File.Fs0 * File.FsUp;
 
     [Signal, File] = ReadSignalFromFile(File, NumOfShiftedSamples, ...
         NumOfNeededSamples);
@@ -68,7 +68,7 @@
         end
 
         if isDrawRes
-            figure(CACodeNum)
+            figure(CACodeNum);
             surf(CorrVals)
         end
 
@@ -148,14 +148,55 @@
 
     % Позиция корреляции, соответствующая началу первого бита в записи
         [~, OffsetCACodes] = min(Metrics);
-        OffsetCACodes = OffsetCACodes - 1;
 
 % Синхронизация с началом бита
     % Число бит в записи
         NumBits = floor(length(PCorrs(OffsetCACodes+1 : end) ) / 20);
 
     PCorrsSync = PCorrs(OffsetCACodes + (1:20*NumBits) );
-    PCorrsSync = reshape(PCorrsSync, 20, []);
 
-    % Когерентное накопление
-        BitCorrVals = sum(PCorrsSync, 1);
+% Некогерентная демодуляция битовой последовательности
+    % Разность фаз корреляций, отстоящих на 20 позиций друг относительно
+    % друга
+        dCors = PCorrsSync(1+20 : end) .* conj(PCorrsSync(1 : end-20) );
+
+    % Накопление корреляций на длительности бита
+        dCors20 = reshape(dCors, 20, []);
+        dCors20 = sum(dCors20, 1);
+
+    % Вторая разность
+        ddCors = dCors20(2:end) .* conj(dCors20(1:end-1) );
+
+    % Вторая разность битовой последовательности
+        ddBits = pskdemod(ddCors, 2, 0, "gray", "OutputType", "bit").';
+
+    % Варианты первой разности битовой последовательности
+        % Заготовка с предположением о первом бите
+            dBits = [[0 1]; repmat(ddBits, 1, 2)];
+
+        dBits = cumsum(dBits, 1);
+        dBits = mod(dBits, 2);
+
+    % Варианты битовой последовательности
+        % Заготовка с предположением о первом бите
+            Bits = [[0 1 1 0]; repmat(dBits, 1, 2)];
+
+        Bits = cumsum(Bits, 1);
+        Bits = mod(Bits, 2);
+
+    % Отбрасывание последовательностей, которые являются копиями
+    % существующих с точностью до инверсии
+        Bits(:, [3 4]) = [];
+
+% Поиск преамбулы подкадра
+    PreSF = 1 - 2 * [1 0 0 0 1 0 1 1]';
+
+    % Преобразование в биполярный вид
+        Bits2 = 1 - 2 * Bits;
+
+    % Корреляция с преамбулой
+        PreCorr = zeros(size(Bits2, 1)-length(PreSF)+1, 2);
+
+        for k = 1 : 2
+            PreCorr(:, k) = conv(Bits2(:, k), flipud(PreSF), "valid");
+        end
