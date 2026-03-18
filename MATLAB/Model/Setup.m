@@ -5,7 +5,7 @@ function Params = Setup()
         Main.StartProcNum = 1; %  1 <= StartProcNum <= length(FuncNames)
 
     % Номер процедуры, на которой надо закончить выполнение Main
-        Main.StopProcNum = 1; %  1 <= StopProcNum <= length(FuncNames) и
+        Main.StopProcNum = 2; %  1 <= StopProcNum <= length(FuncNames) и
             % StartProcNum <= StopProcNum
 
 	% Выбор типа обработки - устанавливается для StartProcNum = 1, чтобы
@@ -14,7 +14,7 @@ function Params = Setup()
         Main.ProcessType = 'NonCoh';
 
     % Флаг необходимости прорисовки результатов
-        Main.isDraw = 3; % 0 - не рисовать; 1 - рисовать; 2 - рисовать и
+        Main.isDraw = 2; % 0 - не рисовать; 1 - рисовать; 2 - рисовать и
             % сохранять; 3 - рисовать, сохранять и закрывать
 
     % Выбор имени файла-записи
@@ -47,7 +47,7 @@ function Params = Setup()
     % Количество периодов, учитываемых при обнаружении.
         P10_NonCohSearchSats.NumCA2Search = 20;
     % Массив центральных частот анализируемых диапазонов, Гц
-        P10_NonCohSearchSats.CentralFreqs = -5200 : 400 : 5200;
+        P10_NonCohSearchSats.CentralFreqs = -5200 : 50 : 5200;
     % Порог обнаружения
         P10_NonCohSearchSats.SearchThreshold = 3.0;
 
@@ -73,14 +73,14 @@ function Params = Setup()
 
     % Количество учитываемых значений задержки/набега синхронизации по
     % времени
-        P20_NonCohTrackSatsAndBitSync.HalfCorLen = 2;
+        P20_NonCohTrackSatsAndBitSync.HalfCorLen = 1;
 
     % Период, с которым производится отображение числа обработанных
     % CA-кодов
-        P20_NonCohTrackSatsAndBitSync.NumCA2Disp = 5*10^3;
+        P20_NonCohTrackSatsAndBitSync.NumCA2Disp = 5e3;
 
     % Максимальное число обрабатываемых CA-кодов (inf - до конца файла!)
-        P20_NonCohTrackSatsAndBitSync.MaxNumCA2Process = inf;
+        P20_NonCohTrackSatsAndBitSync.MaxNumCA2Process = 30e3;
 
     % Количество бит, используемых для битовой синхронизации
         P20_NonCohTrackSatsAndBitSync.NBits4Sync = 100;

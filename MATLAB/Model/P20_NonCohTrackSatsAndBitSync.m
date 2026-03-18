@@ -61,6 +61,12 @@ function Res = P20_NonCohTrackSatsAndBitSync(inRes, Params)
     % Количество бит, используемых для битовой синхронизации
         NBits4Sync = Params.P20_NonCohTrackSatsAndBitSync.NBits4Sync;
 
+    % Частота дискретизации
+        Fs = Res.File.Fs;
+
+    % Необходимость прорисовки результатов
+        isDraw = Params.Main.isDraw;
+
 %% СОХРАНЕНИЕ ПАРАМЕТРОВ
     Track.NumCA2NextSync   = NumCA2NextSync;
     Track.HalfNumCA4Sync   = HalfNumCA4Sync;
@@ -77,23 +83,160 @@ function Res = P20_NonCohTrackSatsAndBitSync(inRes, Params)
         CAPerBit = 20;
 
 %% ОСНОВНАЯ ЧАСТЬ ФУНКЦИИ - ТРЕКИНГ
-    % Строка состояния
-        fprintf('%s Трекинг спутников\n', datestr(now));
-    for k = 1:Res.Search.NumSats
-        % Строка состояния
-            fprintf('%s     Трекинг спутника №%02d (%d из %d) ...\n', ...
-                datestr(now), Res.Search.SatNums(k), k, ...
-                Res.Search.NumSats);
-            
-            ...
-                
-        % Строка состояния
-            fprintf('%s         Завершено.\n', datestr(now));
+% Строка состояния
+    fprintf('%s Трекинг спутников\n', datetime("now") );
+
+% Число отсчётов сигнала, которые необходимо считать из файла для
+% обработки
+    if MaxNumCA2Process == inf
+        NumSamples2Read = Res.File.SamplesLen;
+    else
+        NumSamples2Read = CALen * (1 + MaxNumCA2Process + HalfNumCA4Sync);
+        NumSyncs = length(1 : NumCA2NextSync : MaxNumCA2Process);
+        NumSamples2Read = NumSamples2Read + NumSyncs * HalfCorLen;
+        clear NumSyncs;
     end
-    % Добавим новое поле с результатами в Res
-        Res.Track = Track;
+
+% Считывание сигнала из файла
+    Signal = ReadSignalFromFile(Res.File, 0, NumSamples2Read);
+
+% Цикл по спутникам
+for k = 1:Res.Search.NumSats
+    % Строка состояния
+        fprintf('%s     Трекинг спутника №%02d (%d из %d) ...\n', ...
+            datetime("now"), Res.Search.SatNums(k), k, ...
+            Res.Search.NumSats);
+        
+    % Компенсация частотной отстройки
+        df = Res.Search.FreqShifts(k);
+        Signaldf = Signal .* exp(-1j*2*pi*df * (0:length(Signal)-1) / Fs );
+
+    % Подготовка к трекингу
+        % Указатель на очередной период CA-кода
+            Ptr = Res.Search.SamplesShifts(k);
+        % Счётчик обработанных CA-кодов
+            CACount = 0;
+        % Массив значений корреляций периодов CA-кода с опорной
+        % последовательностью
+            CorVals = [];
+        % Массив числа отсчётов, которые необходимо пропустить в записи для
+        % синхронизации с соответствующим периодом СА-кода
+            SamplesShifts = [];
+        % Опорная последовательность для корреляции
+            refSeqCor = GenCACode(Res.Search.SatNums(k), 1).';
+            refSeqCor = 1 - 2 * repelem(refSeqCor, Res.File.R);
+        % Опорная последовательность для синхронизации
+            refSeqSync = GenCACode( ...
+                Res.Search.SatNums(k), 1 + 2 * HalfNumCA4Sync);
+            refSeqSync = 1 - 2 * repelem(refSeqSync, Res.File.R);
+
+    % Трекинг
+    while (CACount < MaxNumCA2Process) && ( (Ptr + CALen) <= NumSamples2Read)
+
+        % Синхронизация при выполнении условия
+        if mod(CACount, NumCA2NextSync) == 0 && CACount ~= 0
+
+            % Позиции начала и конца отрезка сигнала, который необходимо
+            % использовать для синхронизации
+                P1 = Ptr + 1 - CALen * HalfNumCA4Sync - HalfCorLen;
+                P2 = Ptr + CALen * (1+HalfNumCA4Sync) + HalfCorLen;
+
+            % Если P1 или P2 выходят за диапазон [1; NumSamples2Read],
+            % нужно предусмотреть добавление нулей для соответствия
+            % размерностей
+                ZerosBefore = 0;
+                ZerosAfter  = 0;
+
+                if P1 < 1
+                    ZerosBefore = 1 - P1;
+                    P1 = 1;
+                end
+                if P2 > NumSamples2Read
+                    ZerosAfter = P2 - NumSamples2Read;
+                    P2 = NumSamples2Read;
+                end
+
+            % Выбор отрезка сигнала для временной синхронизации
+                buf = Signaldf(P1 : P2);
+                buf = [zeros(1, ZerosBefore), buf, zeros(1, ZerosAfter) ]; %#ok<AGROW>
+
+            % Корреляция с опорной последовательностью
+                EPLCors = abs( ...
+                    conv(buf, fliplr(conj(refSeqSync) ), "valid") ...
+                    );
+
+            % Определение ухода синхронизации по времени и её подстройка
+                [~, PosMax] = max(EPLCors);
+                drift = PosMax - median(1:length(EPLCors) );
+
+                Ptr = Ptr + drift;
+        end
+
+        % Сохранение сдвига до CA-кода в массив
+            SamplesShifts(end+1) = Ptr; %#ok<AGROW>
+
+        % Корреляция периода СА-кода с опорной последовательностью
+            CorVals(end+1) = Signaldf(Ptr + (1:CALen) ) * conj(refSeqCor); %#ok<AGROW>
+
+        % Инкремент счётчика
+            CACount = CACount + 1;
+        % Обновление указателя на следующий период CA-кода
+            Ptr = Ptr + CALen;
+
+        % Строка состояния
+            if mod(CACount, NumCA2Disp) == 0
+                fprintf('%s       Обработано %d периодов CA-кода.\n', ...
+                    datetime("now"), CACount);
+            end
+    end
+
+    % Сохранение результатов трекинга спутника
+        Track.CorVals{k}       = CorVals;
+        Track.SamplesShifts{k} = SamplesShifts;
+
+    % Прорисовка результатов и сохранение рисунков
+        if isDraw > 0
+            figure( ...
+                Name=['P20_NonCohTrack_SatNum', num2str(Res.Search.SatNums(k) ) ], ...
+                WindowStyle="docked" ...
+                );
+
+            plot(abs(CorVals) ); grid on;
+
+            title( ['Значения модуля корреляции периодов CA-кода с опорной последовательностью для спутника № ', num2str(Res.Search.SatNums(k) ) ] );
+            xlabel('Период CA-кода в записи');
+            ylabel('Корреляция');
+
+            % Установка единого масштаба для всех рисунков
+                if k == 1
+                    YLim = get(gca, "YLim");
+                    YLim(1) = 0;
+                    
+                    set(gca, "YLim", YLim);
+                else
+                    set(gca, "YLim", YLim);
+                end
+        end
+        if isDraw > 1
+            saveas(gcf, ...
+                cat(2, ...
+                    Params.Main.SaveDirName, '/', ...
+                    'P20_NonCohTrack_SatNum_', num2str(Res.Search.SatNums(k) ) ...
+                ) ...
+            );
+        end
+        if isDraw > 2
+            close(gcf);
+        end
 
     % Строка состояния
-        fprintf('%s     Завершено.\n', datestr(now));    
+        fprintf('%s     Завершено.\n', datetime("now") );
+end
+
+% Добавим новое поле с результатами в Res
+    Res.Track = Track;
+
+% Строка состояния
+    fprintf('%s Завершено.\n', datetime("now") );
 
 %% ОСНОВНАЯ ЧАСТЬ ФУНКЦИИ - БИТОВАЯ СИНХРОНИЗАЦИЯ
