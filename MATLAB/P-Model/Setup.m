@@ -14,7 +14,7 @@ function Params = Setup()
         Main.ProcessType = 'NonCoh';
 
     % ‘лаг необходимости прорисовки результатов
-        Main.isDraw = 3; % 0 - не рисовать; 1 - рисовать; 2 - рисовать и
+        Main.isDraw = 2; % 0 - не рисовать; 1 - рисовать; 2 - рисовать и
             % сохран€ть; 3 - рисовать, сохран€ть и закрывать
 
     % ¬ыбор имени файла-записи
@@ -38,7 +38,7 @@ function Params = Setup()
         Main.NumOfChannels  = 1;
         Main.ChanNum        = 0;
         Main.DataType       = 'int16';
-        Main.Fs0            = 2.046*10^6;
+        Main.Fs0            = 1.023*10^6 * 2;
         Main.dF             = 0;
         Main.FsDown         = 1;
         Main.FsUp           = 1;
@@ -47,7 +47,7 @@ function Params = Setup()
     %  оличество периодов, учитываемых при обнаружении.
         P10_NonCohSearchSats.NumCA2Search = 20;
     % ћассив центральных частот анализируемых диапазонов, √ц
-        P10_NonCohSearchSats.CentralFreqs = -6000 : 1000 : 6000;
+        P10_NonCohSearchSats.CentralFreqs = -5200 : 50 : 5200;
     % ѕорог обнаружени€
         P10_NonCohSearchSats.SearchThreshold = 3.0;
 
@@ -77,10 +77,10 @@ function Params = Setup()
 
     % ѕериод, с которым производитс€ отображение числа обработанных
     % CA-кодов
-        P20_NonCohTrackSatsAndBitSync.NumCA2Disp = 5*10^3;
+        P20_NonCohTrackSatsAndBitSync.NumCA2Disp = 5e3;
 
     % ћаксимальное число обрабатываемых CA-кодов (inf - до конца файла!)
-        P20_NonCohTrackSatsAndBitSync.MaxNumCA2Process = inf;
+        P20_NonCohTrackSatsAndBitSync.MaxNumCA2Process = 30e3;
 
     %  оличество бит, используемых дл€ битовой синхронизации
         P20_NonCohTrackSatsAndBitSync.NBits4Sync = 100;
