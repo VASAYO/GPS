@@ -88,7 +88,7 @@ function Res = P10_NonCohSearchSats(inRes, Params)
 
                 for fIdx = 1 : NumCFreqs
                     % Корреляция сигнала с опорной последовательностью
-                        buf = conv(Signal, flipud(refSeqs(:, fIdx) ), ...
+                        buf = conv(Signal, flipud(conj(refSeqs(:, fIdx) ) ), ...
                             "valid");
 
                     % Некогерентное накопление
