@@ -5,7 +5,7 @@ function Params = Setup()
         Main.StartProcNum = 1; %  1 <= StartProcNum <= length(FuncNames)
 
     % Ќомер процедуры, на которой надо закончить выполнение Main
-        Main.StopProcNum = 2; %  1 <= StopProcNum <= length(FuncNames) и
+        Main.StopProcNum = 3; %  1 <= StopProcNum <= length(FuncNames) и
             % StartProcNum <= StopProcNum
 
 	% ¬ыбор типа обработки - устанавливаетс€ дл€ StartProcNum = 1, чтобы
@@ -14,7 +14,7 @@ function Params = Setup()
         Main.ProcessType = 'NonCoh';
 
     % ‘лаг необходимости прорисовки результатов
-        Main.isDraw = 2; % 0 - не рисовать; 1 - рисовать; 2 - рисовать и
+        Main.isDraw = 1; % 0 - не рисовать; 1 - рисовать; 2 - рисовать и
             % сохран€ть; 3 - рисовать, сохран€ть и закрывать
 
     % ¬ыбор имени файла-записи
