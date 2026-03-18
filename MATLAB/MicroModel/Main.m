@@ -22,7 +22,7 @@
 % Вычисляемые параметры
 
 % Считывание сигнала из файла
-    File.Name = '../../Signals/28_01_2019__17_02_51_x02_1ch_16b_15pos_200000ms.dat';
+    File.Name = '../../Signals/30_08_2018__19_38_33_x02_1ch_16b_15pos_90000ms.dat';
     File.HeadLenInBytes = 0;
     File.NumOfChannels  = 1;
     File.ChanNum  = 0;
@@ -32,13 +32,13 @@
     File.FsDown   = 1;
     File.FsUp     = 1;
     NumOfShiftedSamples = 0;
-    NumOfNeededSamples  = 45 * File.Fs0 * File.FsUp;
+    NumOfNeededSamples  = 90 * File.Fs0 * File.FsUp;
 
     [Signal, File] = ReadSignalFromFile(File, NumOfShiftedSamples, ...
         NumOfNeededSamples);
 
 % Обнаружение спутника
-    CACodeNum = 1;
+    CACodeNum = 31;
 
     % Отрезок сигнала в начале записи
         SignalShort = Signal(1:(NumCACodePers+1) * CACodeLen * sps - 1);
@@ -86,13 +86,15 @@
 
 % Вычисление корреляций C/A кодов с опорной последовательностью
     % Число полных C/A кодов в записи
-        NumFullCACodes = floor( (length(Signal) - OffsetSamples) / length(refSeq) );
+        NumFullCACodes = floor( (length(Signal) - OffsetSamples) / length(refSeq) ) - 1;
 
     % Указатель, на начало очередного периода C/A кода
         Ptr = OffsetSamples +1;
 
     % Значения корреляций
         PCorrs = zeros(NumFullCACodes, 1);
+        ECorrs = zeros(NumFullCACodes, 1);
+        LCorrs = zeros(NumFullCACodes, 1);
 
     % Опорная последовательность
         refSeq = repelem(ethCACode, sps).';
@@ -126,7 +128,9 @@
                 Ofst = Ofst - 2;
 
             else
+                % ECorrs(k) = Signal( (0:length(refSeq)-1) - 1 + Ptr) * refSeq;
                 PCorrs(k) = Signal( (0:length(refSeq)-1) + Ptr) * refSeq;
+                % LCorrs(k) = Signal( (0:length(refSeq)-1) + 1 + Ptr) * refSeq;
             end
 
         % Инкремент счётчика
@@ -198,5 +202,27 @@
         PreCorr = zeros(size(Bits2, 1)-length(PreSF)+1, 2);
 
         for k = 1 : 2
-            PreCorr(:, k) = conv(Bits2(:, k), flipud(PreSF), "valid");
+            PreCorr(:, k) = abs(conv(Bits2(:, k), flipud(PreSF), "valid") );
         end
+
+    % Накопление корреляции с периодом одного подкадра
+        buf = PreCorr(1:end-mod(size(PreCorr, 1), 300), :);
+        buf = reshape(buf, 300, [], 2);
+        NumCorPers = size(buf, 2);
+        buf = squeeze(sum(buf, 2) );
+
+    % Порог обнаружения преамбулы
+        Thr = 8 * NumCorPers * 0.95;
+
+    PosPreamSF = (buf > Thr);
+    PosPreamSF = find(PosPreamSF == 1);
+
+    if PosPreamSF > 300
+        % Отбрасывание невалидной битовой последовательнсоти
+            Bits = Bits(:, 2);
+
+        PosPreamSF = PosPreamSF - 300;
+    else
+        % Отбрасывание невалидной битовой последовательнсоти
+            Bits = Bits(:, 1);
+    end
