@@ -128,7 +128,7 @@ function Res = P10_NonCohSearchSats(inRes, Params)
                         Search.CorVals(end+1) = Peak2Aver;
                 end
 
-                Search.AllCorVals(caIdx) = max(abs(CorrBody), [], "all");
+                Search.AllCorVals(caIdx) = Peak2Aver;
 
             % Прорисовка результатов и сохранение рисунков
                 if isDraw > 0
