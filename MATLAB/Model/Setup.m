@@ -73,7 +73,7 @@ function Params = Setup()
 
     %  оличество учитываемых значений задержки/набега синхронизации по
     % времени
-        P20_NonCohTrackSatsAndBitSync.HalfCorLen = 1;
+        P20_NonCohTrackSatsAndBitSync.HalfCorLen = 2;
 
     % ѕериод, с которым производитс€ отображение числа обработанных
     % CA-кодов

@@ -236,7 +236,70 @@ end
 % Добавим новое поле с результатами в Res
     Res.Track = Track;
 
+% Очищаем рабочее пространство
+    clear Signal Signaldf CorVals SamplesShifts CACount EPLCors ...
+        P1 P2 Ptr refSeqCor refSeqSync PosMax YLim ZerosAfter  ...
+        ZerosBefore drift df buf;
+
 % Строка состояния
     fprintf('%s Завершено.\n', datetime("now") );
 
 %% ОСНОВНАЯ ЧАСТЬ ФУНКЦИИ - БИТОВАЯ СИНХРОНИЗАЦИЯ
+% Цикл по спутникам
+for k = 1:Res.Search.NumSats
+
+    % Строка состояния
+        fprintf('%s Битовая синхронизация спутника №%02d (%d из %d) ...\n', ...
+            datetime("now"), Res.Search.SatNums(k), k, ...
+            Res.Search.NumSats);
+
+    % Массив корреляций, полученный при трекинге
+        CorVals = Track.CorVals{k};
+        CorVals = CorVals(1 : 20 * NBits4Sync + 1);
+
+    % Дифференциальное созвездие
+        dCorVals = CorVals(2:end) .* conj(CorVals(1:end-1) );
+        dCorVals = reshape(dCorVals, 20, []);
+
+    % Вычисление метрик для битовой синхронизации
+        Metrics = abs(sum(dCorVals, 2) );
+
+    % Число CA-кодов, которые необходимо пропустить до начала бита
+        [~, ShiftCACodes] = min(abs(Metrics) );
+        if ShiftCACodes == 20, ShiftCACodes = 0; end
+
+    % Сохранение результатов в структуру
+        BitSync.CAShifts(k) = ShiftCACodes;
+        BitSync.Cors(k, :) = Metrics';
+
+    % Прорисовка результатов и сохранение рисунков
+        if isDraw > 0
+            figure( ...
+                Name=['P20_NonCohBitSync_SatNum', num2str(Res.Search.SatNums(k) ) ], ...
+                WindowStyle="docked" ...
+                );
+
+            stem(Metrics); grid on;
+
+            title( ['Метрики, использующиеся для битовой синхронизации спутника № ', num2str(Res.Search.SatNums(k) ) ] );
+            xlabel('Сколько нужно пропустить CA-кодов до начала бита');
+            ylabel('Значение метрики');
+        end
+        if isDraw > 1
+            saveas(gcf, ...
+                cat(2, ...
+                    Params.Main.SaveDirName, '/', ...
+                    'P20_NonCohBitSync_SatNum_', num2str(Res.Search.SatNums(k) ) ...
+                ) ...
+            );
+        end
+        if isDraw > 2
+            close(gcf);
+        end
+
+    % Строка состояния
+        fprintf('%s   Завершено.\n', datetime("now") );
+end
+
+% Добавим новое поле с результатами в Res
+    Res.BitSync = BitSync;
