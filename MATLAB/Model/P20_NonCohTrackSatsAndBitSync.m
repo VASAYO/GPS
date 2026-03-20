@@ -95,6 +95,12 @@ function Res = P20_NonCohTrackSatsAndBitSync(inRes, Params)
         NumSyncs = length(1 : NumCA2NextSync : MaxNumCA2Process);
         NumSamples2Read = NumSamples2Read + NumSyncs * HalfCorLen;
         clear NumSyncs;
+
+        % Проверка, чтобы рассчитанное значение не превышало количество
+        % отсчётов в записи
+            if NumSamples2Read > Res.File.SamplesLen
+                NumSamples2Read = Res.File.SamplesLen;
+            end
     end
 
 % Считывание сигнала из файла
@@ -253,20 +259,20 @@ for k = 1:Res.Search.NumSats
             datetime("now"), Res.Search.SatNums(k), k, ...
             Res.Search.NumSats);
 
-    % Массив корреляций, полученный при трекинге
+    % Массив корреляций, полученных при трекинге
         CorVals = Track.CorVals{k};
-        CorVals = CorVals(1 : 20 * NBits4Sync + 1);
+        CorVals = CorVals(1 : CAPerBit * NBits4Sync + 1);
 
     % Дифференциальное созвездие
         dCorVals = CorVals(2:end) .* conj(CorVals(1:end-1) );
-        dCorVals = reshape(dCorVals, 20, []);
+        dCorVals = reshape(dCorVals, CAPerBit, []);
 
     % Вычисление метрик для битовой синхронизации
         Metrics = abs(sum(dCorVals, 2) );
 
     % Число CA-кодов, которые необходимо пропустить до начала бита
         [~, ShiftCACodes] = min(abs(Metrics) );
-        if ShiftCACodes == 20, ShiftCACodes = 0; end
+        if ShiftCACodes == CAPerBit, ShiftCACodes = 0; end
 
     % Сохранение результатов в структуру
         BitSync.CAShifts(k) = ShiftCACodes;
