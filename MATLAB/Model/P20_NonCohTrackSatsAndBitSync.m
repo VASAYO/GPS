@@ -82,6 +82,9 @@ function Res = P20_NonCohTrackSatsAndBitSync(inRes, Params)
     % Количество периодов CA-кода, приходящихся на один бит
         CAPerBit = 20;
 
+    % Число периодов СА-кода, используемых для синхронизации
+        NumCA4Sync = 2 * HalfNumCA4Sync + 1;
+
 %% ОСНОВНАЯ ЧАСТЬ ФУНКЦИИ - ТРЕКИНГ
 % Строка состояния
     fprintf('%s Трекинг спутников\n', datetime("now") );
@@ -128,13 +131,9 @@ for k = 1:Res.Search.NumSats
         % Массив числа отсчётов, которые необходимо пропустить в записи для
         % синхронизации с соответствующим периодом СА-кода
             SamplesShifts = [];
-        % Опорная последовательность для корреляции
-            refSeqCor = GenCACode(Res.Search.SatNums(k), 1).';
-            refSeqCor = 1 - 2 * repelem(refSeqCor, Res.File.R);
-        % Опорная последовательность для синхронизации
-            refSeqSync = GenCACode( ...
-                Res.Search.SatNums(k), 1 + 2 * HalfNumCA4Sync);
-            refSeqSync = 1 - 2 * repelem(refSeqSync, Res.File.R);
+        % Опорная последовательность
+            refSeq = GenCACode(Res.Search.SatNums(k), 1);
+            refSeq = 1 - 2 * repelem(refSeq, Res.File.R);
 
     % Трекинг
     while (CACount < MaxNumCA2Process) && ( (Ptr + CALen) <= NumSamples2Read)
@@ -166,10 +165,21 @@ for k = 1:Res.Search.NumSats
                 buf = Signaldf(P1 : P2);
                 buf = [zeros(1, ZerosBefore), buf, zeros(1, ZerosAfter) ]; %#ok<AGROW>
 
-            % Корреляция с опорной последовательностью
-                EPLCors = abs( ...
-                    conv(buf, fliplr(conj(refSeqSync) ), "valid") ...
-                    );
+            % Память под результат корреляций
+                EPLCors = zeros(NumCA4Sync, 2*HalfCorLen + 1);
+
+            % Корреляции с опорной последовательностью
+            for j = 1 : NumCA4Sync
+                % Выделение отсчётов очередного CA-кода для корреляции
+                    Sig2Cor = buf( (1:CALen+2*HalfCorLen) + (j-1)*CALen );
+                % Корреляция
+                    EPLCors(j, :) = abs( ...
+                        conv(Sig2Cor, fliplr(conj(refSeq) ), "valid") ...
+                        );
+            end
+
+            % Некогерентное накопление
+                EPLCors = sum(EPLCors, 1);
 
             % Определение ухода синхронизации по времени и её подстройка
                 [~, PosMax] = max(EPLCors);
@@ -182,7 +192,7 @@ for k = 1:Res.Search.NumSats
             SamplesShifts(end+1) = Ptr; %#ok<AGROW>
 
         % Корреляция периода СА-кода с опорной последовательностью
-            CorVals(end+1) = Signaldf(Ptr + (1:CALen) ) * conj(refSeqCor); %#ok<AGROW>
+            CorVals(end+1) = Signaldf(Ptr + (1:CALen) ) * conj(refSeq.'); %#ok<AGROW>
 
         % Инкремент счётчика
             CACount = CACount + 1;
@@ -244,8 +254,8 @@ end
 
 % Очищаем рабочее пространство
     clear Signal Signaldf CorVals SamplesShifts CACount EPLCors ...
-        P1 P2 Ptr refSeqCor refSeqSync PosMax YLim ZerosAfter  ...
-        ZerosBefore drift df buf;
+        P1 P2 Ptr refSeq refSeqSync PosMax YLim ZerosAfter  ...
+        ZerosBefore drift df buf Sig2Cor;
 
 % Строка состояния
     fprintf('%s Завершено.\n', datetime("now") );
