@@ -35,6 +35,10 @@ function Res = P40_GetSubFrames(inRes, Params)
 %% РАСЧЁТ ПАРАМЕТРОВ
 
 %% ОСНОВНАЯ ЧАСТЬ ФУНКЦИИ - ЦИКЛ ПО НАЙДЕННЫМ СПУТНИКАМ
+for k = 1 : Res.Search.NumSats
+    % Выделение демодулированных битовых последовательностей спутника
+        Bits = Res.Demod.Bits{k};
+end
 end
 
 function Words = CheckFrames(Bits)
