@@ -2,10 +2,10 @@ function Params = Setup()
 
 % Main
     % Номер процедуры, с которой надо начать выполнение Main
-        Main.StartProcNum = 1; %  1 <= StartProcNum <= length(FuncNames)
+        Main.StartProcNum = 3; %  1 <= StartProcNum <= length(FuncNames)
 
     % Номер процедуры, на которой надо закончить выполнение Main
-        Main.StopProcNum = 2; %  1 <= StopProcNum <= length(FuncNames) и
+        Main.StopProcNum = 4; %  1 <= StopProcNum <= length(FuncNames) и
             % StartProcNum <= StopProcNum
 
 	% Выбор типа обработки - устанавливается для StartProcNum = 1, чтобы
@@ -14,7 +14,7 @@ function Params = Setup()
         Main.ProcessType = 'NonCoh';
 
     % Флаг необходимости прорисовки результатов
-        Main.isDraw = 2; % 0 - не рисовать; 1 - рисовать; 2 - рисовать и
+        Main.isDraw = 0; % 0 - не рисовать; 1 - рисовать; 2 - рисовать и
             % сохранять; 3 - рисовать, сохранять и закрывать
 
     % Выбор имени файла-записи
@@ -80,7 +80,7 @@ function Params = Setup()
         P20_NonCohTrackSatsAndBitSync.NumCA2Disp = 5e3;
 
     % Максимальное число обрабатываемых CA-кодов (inf - до конца файла!)
-        P20_NonCohTrackSatsAndBitSync.MaxNumCA2Process = 30e3;
+        P20_NonCohTrackSatsAndBitSync.MaxNumCA2Process = inf;
 
     % Количество бит, используемых для битовой синхронизации
         P20_NonCohTrackSatsAndBitSync.NBits4Sync = 100;
