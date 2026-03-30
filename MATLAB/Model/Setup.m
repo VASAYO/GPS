@@ -2,10 +2,10 @@ function Params = Setup()
 
 % Main
     % Номер процедуры, с которой надо начать выполнение Main
-        Main.StartProcNum = 3; %  1 <= StartProcNum <= length(FuncNames)
+        Main.StartProcNum = 1; %  1 <= StartProcNum <= length(FuncNames)
 
     % Номер процедуры, на которой надо закончить выполнение Main
-        Main.StopProcNum = 4; %  1 <= StopProcNum <= length(FuncNames) и
+        Main.StopProcNum = 5; %  1 <= StopProcNum <= length(FuncNames) и
             % StartProcNum <= StopProcNum
 
 	% Выбор типа обработки - устанавливается для StartProcNum = 1, чтобы
@@ -14,8 +14,9 @@ function Params = Setup()
         Main.ProcessType = 'NonCoh';
 
     % Флаг необходимости прорисовки результатов
-        Main.isDraw = 0; % 0 - не рисовать; 1 - рисовать; 2 - рисовать и
-            % сохранять; 3 - рисовать, сохранять и закрывать
+    % 0 - не рисовать; 1 - рисовать; 2 - рисовать и сохранять; 
+    % 3 - рисовать, сохранять и закрывать
+        Main.isDraw = 0;
 
     % Выбор имени файла-записи
         % Директория с файлами-записями
