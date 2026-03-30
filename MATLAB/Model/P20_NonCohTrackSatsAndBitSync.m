@@ -87,7 +87,7 @@ function Res = P20_NonCohTrackSatsAndBitSync(inRes, Params)
 
 %% ОСНОВНАЯ ЧАСТЬ ФУНКЦИИ - ТРЕКИНГ
 % Строка состояния
-    fprintf('%s Трекинг спутников\n', datetime("now") );
+    fprintf('%s Трекинг спутников...\n', datetime("now") );
 
 % Число отсчётов сигнала, которые необходимо считать из файла для
 % обработки
@@ -201,7 +201,7 @@ for k = 1:Res.Search.NumSats
 
         % Строка состояния
             if mod(CACount, NumCA2Disp) == 0
-                fprintf('%s       Обработано %d периодов CA-кода.\n', ...
+                fprintf('%s         Обработано %d периодов CA-кода.\n', ...
                     datetime("now"), CACount);
             end
     end
@@ -246,7 +246,7 @@ for k = 1:Res.Search.NumSats
         end
 
     % Строка состояния
-        fprintf('%s     Завершено.\n', datetime("now") );
+        fprintf('%s         Завершено.\n', datetime("now") );
 end
 
 % Добавим новое поле с результатами в Res
@@ -258,17 +258,14 @@ end
         ZerosBefore drift df buf Sig2Cor;
 
 % Строка состояния
-    fprintf('%s Завершено.\n', datetime("now") );
+    fprintf('%s     Завершено.\n', datetime("now") );
 
 %% ОСНОВНАЯ ЧАСТЬ ФУНКЦИИ - БИТОВАЯ СИНХРОНИЗАЦИЯ
+% Строка состояния
+    fprintf('%s Битовая синхронизация спутников ...\n', datetime("now") );
+    
 % Цикл по спутникам
 for k = 1:Res.Search.NumSats
-
-    % Строка состояния
-        fprintf('%s Битовая синхронизация спутника №%02d (%d из %d) ...\n', ...
-            datetime("now"), Res.Search.SatNums(k), k, ...
-            Res.Search.NumSats);
-
     % Массив корреляций, полученных при трекинге
         CorVals = Track.CorVals{k};
         CorVals = CorVals(1 : CAPerBit * NBits4Sync + 1);
@@ -312,10 +309,10 @@ for k = 1:Res.Search.NumSats
         if isDraw > 2
             close(gcf);
         end
-
-    % Строка состояния
-        fprintf('%s   Завершено.\n', datetime("now") );
 end
 
 % Добавим новое поле с результатами в Res
     Res.BitSync = BitSync;
+
+% Строка состояния
+    fprintf('%s     Завершено.\n', datetime("now") );

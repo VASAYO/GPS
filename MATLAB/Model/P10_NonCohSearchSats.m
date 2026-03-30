@@ -68,7 +68,8 @@ function Res = P10_NonCohSearchSats(inRes, Params)
     % Цикл по C/A кодам
         for caIdx = 1 : 32
             % Лог
-                fprintf('%s   Поиск спутника №%d: ', datetime("now"), caIdx);
+                fprintf('%s     Поиск спутника №%d: ', ...
+                    datetime("now"), caIdx);
 
             % Генерация набора опорных последовательностей для обнаружения
                 CACode1023 = 1 - 2*GenCACode(caIdx, 1).';
@@ -165,4 +166,7 @@ function Res = P10_NonCohSearchSats(inRes, Params)
 
         % Перезаписываем поле переменной Res
             Res.Search = Search;
+
+        % Лог
+            fprintf('%s     Завершено.\n', datetime("now") );
 end

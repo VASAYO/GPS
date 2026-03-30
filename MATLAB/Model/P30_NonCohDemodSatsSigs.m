@@ -28,11 +28,11 @@ function Res = P30_NonCohDemodSatsSigs(inRes, Params)
         CAPerBit = 20;
 
 %% ОСНОВНАЯ ЧАСТЬ ФУНКЦИИ - ЦИКЛ ПО НАЙДЕННЫМ СПУТНИКАМ
-for k = 1 : Res.Search.NumSats
-    % Строка состояния
-        fprintf('%s Некогерентная демодуляция бит спутника №%02d (%d из %d) ...\n', ...
-            datetime("now"), Res.Search.SatNums(k), k,  Res.Search.NumSats);
+% Строка состояния
+    fprintf('%s Некогерентная демодуляция бит спутников ...\n', ...
+        datetime("now") );
 
+for k = 1 : Res.Search.NumSats
     % Массив корреляций CA-кодов
         CorVals = Res.Track.CorVals{k};
 
@@ -75,9 +75,6 @@ for k = 1 : Res.Search.NumSats
     % Сохранение результата в структуру
         Demod.Bits{k} = Bits;
 
-    % Строка состояния
-        fprintf('%s   Завершено.\n', datetime("now") );
-
     % Прорисовка результатов и сохранение рисунков
         if isDraw > 0
             figure( ...
@@ -106,3 +103,6 @@ end
 
 % Добавление поля в структуру результатов
     Res.Demod = Demod;
+
+% Строка состояния
+    fprintf('%s     Завершено.\n', datetime("now") );

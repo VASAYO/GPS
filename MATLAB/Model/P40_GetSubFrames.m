@@ -40,6 +40,10 @@ function Res = P40_GetSubFrames(inRes, Params)
 %% РАСЧЁТ ПАРАМЕТРОВ
 
 %% ОСНОВНАЯ ЧАСТЬ ФУНКЦИИ - ЦИКЛ ПО НАЙДЕННЫМ СПУТНИКАМ
+% Строка состояния
+    fprintf('%s Подкадровая синхронизация и декодирование слов ...\n', ...
+        datetime("now") );
+
 for k = 1 : Res.Search.NumSats
     % Выделение демодулированных битовых последовательностей спутника
         Bits = Res.Demod.Bits{k};
@@ -79,6 +83,9 @@ end
 
 % Присвоение нового поля структуре с результатом
     Res.SubFrames = SubFrames;
+
+% Строка состояния
+    fprintf('%s     Завершено.\n', datetime("now") );
 end
 
 function Words = CheckFrames(Bits)

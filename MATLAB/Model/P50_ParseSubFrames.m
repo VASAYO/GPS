@@ -38,6 +38,10 @@ function Res = P50_ParseSubFrames(inRes, Params) %#ok<INUSD>
 
 %% ОСНОВНАЯ ЧАСТЬ ФУНКЦИИ - ЦИКЛ ПО НАЙДЕННЫМ СПУТНИКАМ С УСПЕШНОЙ
 % ПОДКАДРОВОЙ СИНХРОНИЗАЦИЕЙ
+
+% Строка состояния
+    fprintf('%s Парсинг подкадров ...\n', datetime("now") );
+
 for k = 1 : Res.Search.NumSats
     % Если для спутника не была выполнена подкадровая синхронизация,
     % пропустим его
@@ -118,6 +122,9 @@ end
 
 % Присваивание структуре с результатами нового поля
     Res.SatsData = SatsData;
+
+% Строка состояния
+    fprintf('%s     Завершено.\n', datetime("now") );
 end
 
 function [Bits, isCRC] = Words2BitFrame(Words)
