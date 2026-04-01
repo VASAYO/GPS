@@ -413,7 +413,7 @@ function SF = ParseSF2(Words, isCRC, SFID)
             end
         % AODO
             if isCRC(10 -2)
-                SF.AODO = comp2de(Words(288:288+5-1), false);
+                SF.AODO = comp2de(Words(288:288+5-1), false) * 900;
             else
                 SF.AODO = NaN;
             end
