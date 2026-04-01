@@ -63,9 +63,9 @@ for k = 1 : Res.Search.NumSats
             % Парсинг HOW
                 HOW = ParseHOW(Words{sfIdx, 2} );
 
-            % Если было успешно расшифровано HOW.TOW_CountMessage, то со 
+            % Если было успешно расшифровано HOW.TOW_Count_Message, то со 
             % спутником есть смысл работать дальше
-                if ~isnan(HOW.TOW_CountMessage)
+                if ~isnan(HOW.TOW_Count_Message)
                     SatsData.isSat2Use(k) = 1;
                 end
     
@@ -74,7 +74,7 @@ for k = 1 : Res.Search.NumSats
                 SatsData.HOW{k}(end+1) = HOW;
         end
 
-    % Если ни разу не было успешно расшифровано поле HOW.TOW_CountMessage,
+    % Если ни разу не было успешно расшифровано поле HOW.TOW_Count_Message,
     % пропускаем спутник
         if ~SatsData.isSat2Use(k), continue; end
 
@@ -623,17 +623,17 @@ function HOW = ParseHOW(Word)
 
     % Инициализация результата
         HOW = struct( ...
-            'TOW_CountMessage', NaN, ...
-            'Alert_Flag',       NaN, ...
-            'Anti_Spoof_Flag',  NaN, ...
-            'SubFrameID',       NaN  ...
+            'TOW_Count_Message', NaN, ...
+            'Alert_Flag',        NaN, ...
+            'Anti_Spoof_Flag',   NaN, ...
+            'SubFrameID',        NaN  ...
             );
 
     % Если для данного слова не сошелся CRC, прекращаем парсинг
         if isempty(Word), return; end
 
-    % Парсинг TOW_CountMessage
-        HOW.TOW_CountMessage = comp2de(Word(1:17), false);
+    % Парсинг TOW_Count_Message
+        HOW.TOW_Count_Message = comp2de(Word(1:17), false);
 
     % Парсинг Alert_Flag
         HOW.Alert_Flag = Word(18);
