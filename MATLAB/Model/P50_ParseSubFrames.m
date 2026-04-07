@@ -80,7 +80,7 @@ for k = 1 : Res.Search.NumSats
 
     % Массив номеров подкадров
         for sfIdx = 1 : NumSFs
-            SFID = SatsData.HOW{k}(sfIdx).SubFrameID;
+            SFID = SatsData.HOW{k}(sfIdx).Subframe_ID;
 
             % Если находим успешно декодированный номер подкадра, на его
             % основании определяем остальные номера
@@ -626,7 +626,7 @@ function HOW = ParseHOW(Word)
             'TOW_Count_Message', NaN, ...
             'Alert_Flag',        NaN, ...
             'Anti_Spoof_Flag',   NaN, ...
-            'SubFrameID',        NaN  ...
+            'Subframe_ID',        NaN  ...
             );
 
     % Если для данного слова не сошелся CRC, прекращаем парсинг
@@ -641,8 +641,8 @@ function HOW = ParseHOW(Word)
     % Парсинг Anti_Spoof_Flag
         HOW.Anti_Spoof_Flag = Word(19);
 
-    % Парсинг SubFrameID
-        HOW.SubFrameID = comp2de(Word(20:22), false);
+    % Парсинг Subframe_ID
+        HOW.Subframe_ID = comp2de(Word(20:22), false);
 end
                 
 function Out = comp2de(In, isSigned)
