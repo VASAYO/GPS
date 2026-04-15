@@ -5,7 +5,7 @@ function Params = Setup()
         Main.StartProcNum = 1; %  1 <= StartProcNum <= length(FuncNames)
 
     % Номер процедуры, на которой надо закончить выполнение Main
-        Main.StopProcNum = 5; %  1 <= StopProcNum <= length(FuncNames) и
+        Main.StopProcNum = 7; %  1 <= StopProcNum <= length(FuncNames) и
             % StartProcNum <= StopProcNum
 
 	% Выбор типа обработки - устанавливается для StartProcNum = 1, чтобы
