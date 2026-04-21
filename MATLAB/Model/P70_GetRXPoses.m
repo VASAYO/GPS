@@ -80,6 +80,17 @@ function Res = P70_GetRXPoses(inRes, Params)
         CurSatNums2Pos = SatNums2Pos;
     end
 
+% ¬ыполним проверку спутников, выбранных дл€ вычислени€ координат. ≈сли дл€
+% какого-либо спутника isSat2Use = 0, исключим его из списка
+    isSat2Remove = false(size(CurSatNums2Pos) );
+    for k = 1 : length(CurSatNums2Pos)
+        if Res.SatsData.isSat2Use(CurSatNums2Pos(k) ) == 0
+            isSat2Remove(k) = true;
+        end
+    end
+    CurSatNums2Pos(isSat2Remove) = [];
+    clear isSat2Remove;
+
 % „исло вычислений координат за длительность подкадра
     NumCalcsPerSF = floor(6000 / CAStep);
 
