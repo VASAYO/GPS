@@ -325,6 +325,7 @@ function [outE, isNew] = CheckAndAddE(inE, SFNum, SFData, ENames)
 
                     outE = MakeEmptyE(ENames);
                     outE.IODE = IODEParsed;
+                    outE.IODC = IODEParsed;
                     isNew = 1;
 
                 elseif isempty(inE.IODE) && isnan(IODEParsed)
