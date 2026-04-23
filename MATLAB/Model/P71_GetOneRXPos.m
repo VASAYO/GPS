@@ -99,84 +99,72 @@ function UPos = P71_GetOneRXPos(Es, inGPSTimes, inTimeShifts, ...
         RXPos = [0, 0, 0]';
 
 % Итерационное вычисление координат
-    % Флаг остановки вычислений
-        isStop = false;
-    % Счётчик количества итераций
-        IterCount = 0;
+for IterCount = 1 : MaxNumIters
+    % Текущие оценки значений задержек распространения сигналов
+        TimeShiftsIter = zeros(1, NumSats);
 
-    while ~isStop
-        % Текущие оценки значений задержек распространения сигналов
-            TimeShiftsIter = zeros(1, NumSats);
+        % Цикл по спутникам
+        for sat = 1 : NumSats
+            TimeShiftsIter(sat) = ...
+                sqrt(sum( (RXPos-SatPoses(1:3, sat) ).^2) ) / c - T0;
+        end
 
-            % Цикл по спутникам
-            for sat = 1 : NumSats
-                TimeShiftsIter(sat) = sqrt(sum( (RXPos-SatPoses(1:3, sat) ).^2) ) / c - T0;
-            end
+    % Значения матрицы B
+        B = zeros(NumSats, 1);
 
-        % Значения матрицы B
-            B = zeros(NumSats, 1);
+        % Цикл по спутникам
+        for sat = 1 : NumSats
+            B(sat) = c * (TimeShifts(sat) - TimeShiftsIter(sat) );
+        end
 
-            % Цикл по спутникам
-            for sat = 1 : NumSats
-                B(sat) = c * (TimeShifts(sat) - TimeShiftsIter(sat) );
-            end
+    % Значения матрицы А
+        A = zeros(NumSats, 4);
+        A(:, 4) = -c;
 
-        % Значения матрицы А
-            A = zeros(NumSats, 4);
-            A(:, 4) = -c;
+        % Циклы по строкам и столбцам матрицы
+        for row = 1 : NumSats
+        for col = 1 : 3
+            A(row, col) = -(SatPoses(col, row) - RXPos(col) ) / c / ...
+                (TimeShiftsIter(row) + T0);
+        end
+        end
+        clear row col sat;
 
-            % Циклы по строкам и столбцам матрицы
-            for row = 1 : NumSats
-            for col = 1 : 3
-                A(row, col) = -(SatPoses(col, row) - RXPos(col) ) / c / ...
-                    (TimeShiftsIter(row) + T0);
-            end
-            end
-            clear row col sat;
+    % Обратная или псевдообратная матрица к A
+        if NumSats == 4
+            invA = inv(A);
 
-        % Обратная или псевдообратная матрица к A
-            if NumSats == 4
-                invA = inv(A);
-
-            elseif NumSats > 4
-                invA = pinv(A);
-
-            else
-                error(['%s Невозможно рассчитать координаты т.к. ' ...
-                    'используется менее 4 спутников'], datetime('now') );
-            end
-
-        % Матрица X
-            X = invA * B;
-
-        % Оценка отклонения от истинного значения
-            buf = [X(1), X(2), X(3), X(4)*c];
-            Delta = sqrt(sum(buf.^2) );
-
-        % Увеличим счётчик итераций
-            IterCount = IterCount + 1;
-
-        % Определим, нужно ли выполнять следующую итерацию
-            isStop = (Delta < MaxDelta) || (IterCount >= MaxNumIters);
-
-        if isStop
-        % Если полученное значение нас устраивает, принимаем в качестве
-        % решения координаты RXPos
+        elseif NumSats > 4
+            invA = pinv(A);
 
         else
-        % Иначе обновим значения переменных, необходимых для расчёта, после
-        % чего выполним еще одну итерацию
-
-            RXPos = RXPos + X(1:3);
-            T0    = T0 + X(4);
-
-            % Обновим координаты спутников
-            for sat = 1 : NumSats
-                SatPoses(1:3, sat) = P73_RenewSatPos(SatPoses(:, sat), ...
-                    T0 + TimeShifts(sat), Params);
-            end
+            error(['%s Невозможно рассчитать координаты т.к. ' ...
+                'используется менее 4 спутников'], datetime('now') );
         end
-    end
+
+    % Матрица X
+        X = invA * B;
+
+    % Оценка отклонения от истинного значения
+        buf = [X(1), X(2), X(3), X(4)*c];
+        Delta = sqrt(sum(buf.^2) );
+        
+    % Если была достигнута необходимая точность или выполнена последняя
+    % итерация, выходим из цикла
+        isStop = (Delta < MaxDelta) || (IterCount == MaxNumIters);
+        if isStop, break; end
+
+    % Иначе обновим значения переменных, необходимых для расчёта, после
+    % чего выполним еще одну итерацию
+        RXPos = RXPos + X(1:3);
+        T0    = T0 + X(4);
+
+        % Обновим координаты спутников
+        for sat = 1 : NumSats
+            SatPoses(1:3, sat) = P73_RenewSatPos(SatPoses(:, sat), ...
+                T0 + TimeShifts(sat), Params);
+        end
+end
 
 % Преобразуем результат в сферическую систему координат
     [Lat, Lon, Alt] = P74_Cartesian2Spherical(RXPos, Params);
