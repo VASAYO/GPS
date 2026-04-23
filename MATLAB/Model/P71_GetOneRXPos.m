@@ -175,7 +175,34 @@ for IterCount = 1 : MaxNumIters
 end
 
 % Преобразуем результат в сферическую систему координат
-    [Lat, Lon, Alt] = P74_Cartesian2Spherical(RXPos, Params);
+    [RXLat, RXLon, RXAlt] = P74_Cartesian2Spherical(RXPos, Params);
+
+% Таблица с параметрами спутников
+    % Имена столбцов
+        colNames = {'x', 'y', 'z', 'xs_k', 'ys_k', 'i_k', ...
+            'Lat', 'Lon', 'Alt', 'El', 'Az'};
+    % Инициализация
+        SatsPosesTable = array2table(zeros(0, length(colNames) ), ...
+            "VariableNames", colNames);
+
+    % Вычислим параметры каждого спутника
+    for sat = 1 : NumSats
+        % Координаты и исходные координаты спутника
+            SatPos = P72_GetSatPos(Es{sat}, GPSTimes(sat), ...
+                T0 + TimeShifts(sat), Params);
+        % Широта, долгота, высота
+            [SatLat, SatLon, SatAlt] = P74_Cartesian2Spherical( ...
+                SatPos(1:3), Params);
+        % Угол места, азимут
+            [SatEl, SatAz] = P75_CalculateSatElAz(SatPos(1:3)', RXPos', ...
+                Params);
+
+        % Строка таблицы
+            TLine = [SatPos(1:6)', SatLat, SatLon, SatAlt, SatEl, SatAz];
+            TLine = array2table(TLine);
+        % Присвоение результата
+            SatsPosesTable(sat, :) = TLine;
+    end
 
 % Сохранение результатов
     UPos.x = RXPos(1);
@@ -183,9 +210,11 @@ end
     UPos.z = RXPos(3);
     UPos.T0 = T0;
 
-    UPos.Lat = Lat;
-    UPos.Lon = Lon;
-    UPos.Alt = Alt;
+    UPos.Lat = RXLat;
+    UPos.Lon = RXLon;
+    UPos.Alt = RXAlt;
+
+    UPos.SatsPoses = SatsPosesTable;
 
     UPos.NumIters = IterCount;
     UPos.MaxNumIters = MaxNumIters;
