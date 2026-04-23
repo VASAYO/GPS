@@ -96,7 +96,17 @@ function UPos = P71_GetOneRXPos(Es, inGPSTimes, inTimeShifts, ...
     % Постоянная составляющая времени распространения
         T0 = T0init;
     % Координаты приёмника
-        RXPos = [0, 0, 0]';
+        % Усредненные спутниковые координаты
+            MeanSatPos = mean(SatPoses(1:3, :), 2);
+        % Два возможных решения
+            RXPos = zeros(3, 2);
+            for k = 1 : 3
+                RXPos(k, :) = [1, -1] * R * MeanSatPos(k) / norm(MeanSatPos);
+            end
+        % Выберем решение с наименьшим расстоянием до точки MeanSatPos
+            Dists2 = sum( (RXPos - repmat(MeanSatPos, 1, 2) ).^2, 1);
+            [~, Pos] = min(Dists2);
+            RXPos = RXPos(:, Pos);
 
 % Итерационное вычисление координат
 for IterCount = 1 : MaxNumIters
