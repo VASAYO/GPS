@@ -129,7 +129,7 @@ function UPos = P71_GetOneRXPos(Es, inGPSTimes, inTimeShifts, ...
             for row = 1 : NumSats
             for col = 1 : 3
                 A(row, col) = -(SatPoses(col, row) - RXPos(col) ) / c / ...
-                    (TimeShiftsIter(sat) + T0);
+                    (TimeShiftsIter(row) + T0);
             end
             end
             clear row col sat;
