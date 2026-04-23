@@ -128,7 +128,6 @@ for IterCount = 1 : MaxNumIters
                 (TimeShiftsIter(row) + T0);
         end
         end
-        clear row col sat;
 
     % Обратная или псевдообратная матрица к A
         if NumSats == 4
@@ -145,19 +144,18 @@ for IterCount = 1 : MaxNumIters
     % Матрица X
         X = invA * B;
 
+    % Обновим координаты приёмника и общее время распространения
+        RXPos = RXPos + X(1:3);
+        T0    = T0 + X(4);
+
     % Оценка отклонения от истинного значения
         buf = [X(1), X(2), X(3), X(4)*c];
         Delta = sqrt(sum(buf.^2) );
-        
+
     % Если была достигнута необходимая точность или выполнена последняя
     % итерация, выходим из цикла
         isStop = (Delta < MaxDelta) || (IterCount == MaxNumIters);
         if isStop, break; end
-
-    % Иначе обновим значения переменных, необходимых для расчёта, после
-    % чего выполним еще одну итерацию
-        RXPos = RXPos + X(1:3);
-        T0    = T0 + X(4);
 
         % Обновим координаты спутников
         for sat = 1 : NumSats
