@@ -11,7 +11,7 @@ function Params = Setup()
 	% Выбор типа обработки - устанавливается для StartProcNum = 1, чтобы
 	%   не быть случайно изменённым в дальнейшем
     % 'Coh'/'NonCoh' - когерентная обработка / некогерентная обработка
-        Main.ProcessType = 'NonCoh';
+        Main.ProcessType = 'Coh';
 
     % Флаг необходимости прорисовки результатов
     % 0 - не рисовать; 1 - рисовать; 2 - рисовать и сохранять; 
@@ -32,7 +32,7 @@ function Params = Setup()
         Main.SaveFileName = 'Rate2';
 
     % Директория для сохранения результатов
-        Main.SaveDirName = 'Results_Rate2_NonCoh';
+        Main.SaveDirName = ['Results_Rate2_' Main.ProcessType];
 
     % Параметры структуры файла-записи
         Main.HeadLenInBytes = 0;
@@ -88,14 +88,14 @@ function Params = Setup()
 
 % P20_CohTrackSatsAndBitSync
     % Порядок фильтров
-        P20_CohTrackSatsAndBitSync.DLL.FilterOrder = 2;
+        P20_CohTrackSatsAndBitSync.DLL.FilterOrder = 1;
         P20_CohTrackSatsAndBitSync.FPLL.FilterOrder = [2, 3];
 
     % И DLL и FPLL имеют несколько режимов работы для каждого из них нужно
     % определить
         % Полосы фильтров
-            P20_CohTrackSatsAndBitSync.DLL.FilterBands  = [0.05; 0.05; ...
-                0.05; 0.05];
+            P20_CohTrackSatsAndBitSync.DLL.FilterBands  = [5; 1; ...
+                1; 1]; % 0.05 --> 1 по указанию преподавателя
             P20_CohTrackSatsAndBitSync.FPLL.FilterBands = [ ...
                 5, 5; ...
                 5, 5; ...
@@ -103,7 +103,7 @@ function Params = Setup()
                 2, 2];
 
         % Количество периодов накопления для фильтрации
-            P20_CohTrackSatsAndBitSync.DLL.NumsIntCA  = [4, 10, 20, 20];
+            P20_CohTrackSatsAndBitSync.DLL.NumsIntCA  = [20, 10, 20, 20];
             P20_CohTrackSatsAndBitSync.FPLL.NumsIntCA = [4, 10, 20, 20];
 
 	% Определим количество периодов CA-кода, учитываемых для проверки

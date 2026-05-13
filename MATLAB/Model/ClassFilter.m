@@ -24,23 +24,56 @@ classdef ClassFilter < handle
         %   T     - значение >0 в секундах.
         %   VelocAcc, AccelAcc - необязательные переменные для
         %       инициализации аккумуляторов
+
+            % Заглушка
+                if ~isequal(Order, 1)
+                    error("Реализован только фильтр первого порядка для DLL");
+                end
         
             % Определим тип фильтра
-
+                obj.isDLL = isscalar(Order);
             % Сохраним параметры фильтра внутри объекта
+                obj.Order = Order;
+                if obj.isDLL
+                    obj.Bnd = Bn;
+                else
+                    obj.Bnf = Bn(1);
+                    obj.Bnp = Bn(2);
+                end
+                obj.T = T;
 
             % Расчитаем коэффициенты фильтров DLL, FLL и PLL
-            
+                if obj.isDLL
+                    obj.CoefsDLL = CalcCoefs(Order, Bn);
+                else
+
+                end
             % Инициализируем значения аккумуляторов скорости и ускорения
+                obj.VelocAcc = VelocAcc;
+                obj.AccelAcc = AccelAcc;
         end
         function ChangeParams(obj, Bn, T, VelocAcc, AccelAcc)
             % Сохраним параметры фильтра внутри объекта
+                if obj.isDLL
+                    obj.Bnd = Bn;
+                else
+                    obj.Bnf = Bn(1);
+                    obj.Bnp = Bn(2);
+                end
+                obj.T = T;
 
             % Расчитаем коэффициенты фильтров DLL, FLL и PLL
+                if obj.isDLL
+                    obj.CoefsDLL = CalcCoefs(obj.Order, Bn);
+                else
+
+                end
             
             % Инициализируем значения аккумуляторов скорости и ускорения
+                obj.VelocAcc = VelocAcc;
+                obj.AccelAcc = AccelAcc;
         end
-        function [Output, VelocAcc, AccelAcc] = Step(obj, Inp1, Inp2)
+        function [Output, VelocAcc, AccelAcc] = Step(obj, Inp1, Inp2) %#ok<INUSD>
         % Функция выполнения действий одного шага фильтра
         % Формулы соответствуют Kaplan: page 181, fig 5.20
         %
@@ -54,6 +87,17 @@ classdef ClassFilter < handle
         %   Output - значение, которое нужно подать на NCO
         %   VelocAcc, AccelAcc - текущие значения аккумуляторов
 
+            % Шаг фильтра
+                switch obj.Order
+                    case 1
+                        Output = Inp1 * obj.CoefsDLL;
+
+                    otherwise
+                end
+            
+            % Значения аккумуляторов после выполнения шага фильтра
+                AccelAcc = obj.AccelAcc;
+                VelocAcc = obj.VelocAcc;
         end
     end
 end
@@ -68,4 +112,10 @@ function Coefs = CalcCoefs(Order, Bn)
 % Выходные переменные
 %   Coefs - массив [1xOrder] коэффициентов фильтра.
 
+    switch Order
+        case 1
+            Coefs = Bn * 4;
+
+        otherwise
+    end
 end
