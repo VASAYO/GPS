@@ -106,7 +106,7 @@ IDOT    = Data.IDOT * pi;
     Delta_t_r = F*Data.e*Data.sqrtA*sin(E_k);
 % Поправка времени испускания
     Delta_t_sv = Data.a_f0 + Data.a_f1*(inGPSTime-Data.t_oc) + ...
-        Data.a_f2*(inGPSTime-Data.t_oc)^2 + Delta_t_r;
+        Data.a_f2*(inGPSTime-Data.t_oc)^2 + Delta_t_r - Data.T_GD;
 
 % Корректировки
     GPSTime = inGPSTime - Delta_t_sv;
