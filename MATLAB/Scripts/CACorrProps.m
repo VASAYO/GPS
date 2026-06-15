@@ -7,7 +7,7 @@
     % Тип корреляционной функции:
     %   'aperiodic' - апериодическая;
     %   'periodic'  - периодическая;
-        Type = 'aperiodic';
+        Type = 'periodic';
     % Номера СА-кодов, для которых исследуются взаимные корреляционные
     % свойства.
         CANum1 = 2;
@@ -16,10 +16,12 @@
         dfVals = -5e3:10:5e3;
     % Число отсчётов одного периода CA-кода
         CALen = 1023;
+    % Число периодов CA-кодов
+        NumCAPers = 1;
 
 % Генерация одного периода СА-кодов в двухполярной форме
-    CA1 = 1 - 2*GenCACode(CANum1, 1);
-    CA2 = 1 - 2*GenCACode(CANum2, 1);
+    CA1 = 1 - 2*GenCACode(CANum1, NumCAPers);
+    CA2 = 1 - 2*GenCACode(CANum2, NumCAPers);
 
 % В зависимости от того, исследуем мы апериодическую или периодическую КФ,
 % добавим к одному из СА-кодов по бокам нули или доп. периоды СА-кода
@@ -31,7 +33,7 @@
 
 %% Построение тела неопределённости
 % Память под результат
-    CorRes = zeros(length(dfVals), 1023*2-1);
+    CorRes = zeros(length(dfVals), 2*length(CA1)-1);
 
 % Цикл по частотным сдвигам
 t = (0 : length(CA2)-1) / Fs;
@@ -42,7 +44,8 @@ for idf = 1 : length(dfVals)
 end
 
 %% Прорисовка результатов
-dtVals = (-CALen+1 : CALen-1) / Fs;
+L = size(CorRes, 2);
+dtVals = (-(L-1)/2 : (L-1)/2) / Fs;
 
 figure(WindowStyle="docked");
 surf(dtVals, dfVals, abs(CorRes) );
